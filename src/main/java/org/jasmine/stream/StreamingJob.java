@@ -18,7 +18,12 @@
 
 package org.jasmine.stream;
 
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+
+import java.util.Properties;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -57,6 +62,13 @@ public class StreamingJob {
 		 * http://flink.apache.org/docs/latest/apis/streaming/index.html
 		 *
 		 */
+
+		Properties properties = new Properties();
+		properties.setProperty("bootstrap.servers", "localhost:9092");
+		properties.setProperty("group.id", "test");
+		DataStream<String> stream = env
+				.addSource(new FlinkKafkaConsumer<>("input-topic", new SimpleStringSchema(), properties));
+		stream.print();
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
