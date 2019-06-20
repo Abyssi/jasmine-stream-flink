@@ -18,15 +18,23 @@
 
 package org.jasmine.stream;
 
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.jasmine.stream.models.CommentInfo;
+import org.jasmine.stream.models.Top3Article;
+import org.jasmine.stream.operators.CounterAggregateFunction;
+import org.jasmine.stream.operators.TopAggregateFunction;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
+import org.jasmine.stream.utils.SerializableCallback;
 
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.ToLongFunction;
 
 public class StreamingJob {
 
@@ -39,8 +47,32 @@ public class StreamingJob {
 		properties.setProperty("group.id", "test");
 		DataStream<CommentInfo> stream = env
 				.addSource(new FlinkKafkaConsumer<>("input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
-				.filter(Objects::nonNull);
-		stream.print();
+				.filter(Objects::nonNull)
+				.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
+					@Override
+					public long extractAscendingTimestamp(CommentInfo commentInfo) {
+						return commentInfo.getCreateDate();
+					}
+				});
+
+		// Query 1
+		DataStream<Top3Article> top3Articles = stream
+				.map(CommentInfo::getArticleID)
+				.keyBy(s -> s)
+				.timeWindow(Time.hours(1))
+				.aggregate(new CounterAggregateFunction<>())
+				.timeWindowAll(Time.hours(1))
+				.aggregate(new TopAggregateFunction<>(3, new SerializableCallback<Comparator<Tuple2<String, Long>>>() {
+					@Override
+					public Comparator<Tuple2<String, Long>> call() {
+						return Comparator.comparingLong(value -> value.f1);
+					}
+				}))
+				.map(item -> new Top3Article());
+
+
+		//stream.print();
+		top3Articles.print();
 
 		// execute program
 		env.execute("JASMINE Stream");
