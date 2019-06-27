@@ -4,11 +4,10 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonPro
 
 /**
  * CommentType enum
- * */
+ */
 public enum CommentType {
     @JsonProperty("comment")
     COMMENT,
     @JsonProperty("userReply")
     USER_REPLY
-    ;
 }

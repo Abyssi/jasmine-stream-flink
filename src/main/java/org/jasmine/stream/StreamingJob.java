@@ -24,59 +24,81 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
+import org.jasmine.stream.models.CommentType;
 import org.jasmine.stream.models.Top3Article;
+import org.jasmine.stream.operators.CollectorAggregateFunction;
 import org.jasmine.stream.operators.CounterAggregateFunction;
 import org.jasmine.stream.operators.TopAggregateFunction;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
+import org.jasmine.stream.utils.DateUtils;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Properties;
 
 public class StreamingJob {
 
-	public static void main(String[] args) throws Exception {
-		// set up the streaming execution environment
-		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    public static void main(String[] args) throws Exception {
+        // set up the streaming execution environment
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		Properties properties = new Properties();
-		properties.setProperty("bootstrap.servers", "localhost:9092");
-		properties.setProperty("group.id", "test");
-		DataStream<CommentInfo> stream = env
-				.addSource(new FlinkKafkaConsumer<>("input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
-				.filter(Objects::nonNull)
-				.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
-					@Override
-					public long extractAscendingTimestamp(CommentInfo commentInfo) {
-						return commentInfo.getCreateDate();
-					}
-				});
+        Properties properties = new Properties();
+        properties.setProperty("bootstrap.servers", "localhost:9092");
+        properties.setProperty("group.id", "test");
+        DataStream<CommentInfo> stream = env
+                .addSource(new FlinkKafkaConsumer<>("input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
+                .filter(Objects::nonNull)
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
+                    @Override
+                    public long extractAscendingTimestamp(CommentInfo commentInfo) {
+                        return commentInfo.getCreateDate();
+                    }
+                });
 
-		// Query 1
-		DataStream<Top3Article> top3Articles = stream
-				.map(CommentInfo::getArticleID)
-				.keyBy(s -> s)
-				.timeWindow(Time.hours(1))
-				.aggregate(new CounterAggregateFunction<>())
-				.timeWindowAll(Time.hours(1))
-				.aggregate(new TopAggregateFunction<Tuple2<String, Long>>(){
+        // Query 1
+        DataStream<Top3Article> top3Articles = stream
+                .map(CommentInfo::getArticleID)
+                .keyBy(s -> s)
+                .timeWindow(Time.hours(1))
+                .aggregate(new CounterAggregateFunction<>())
+                .timeWindowAll(Time.hours(1))
+                .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
                     @Override
                     public BoundedPriorityQueue<Tuple2<String, Long>> createAccumulator() {
                         return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
                     }
                 })
-				.map(item -> {
-					Tuple2<String, Long>[] array = item.toArray();
-					return new Top3Article(0, array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1);
-				});
+                .map(item -> {
+                    Tuple2<String, Long>[] array = item.toArray();
+                    return new Top3Article(0, array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1);
+                });
+
+        // Query 2
+        DataStream<CommentHourlyCount> commentsCount = stream
+                .filter(item -> item.getCommentType() == CommentType.COMMENT)
+                .map(item -> {
+                    Calendar calendar = DateUtils.parseCalendar(item.getCreateDate());
+                    return (int) Math.floor(calendar.get(Calendar.HOUR_OF_DAY) % 2.0);
+                })
+                .keyBy(s -> s)
+                .timeWindow(Time.hours(24))
+                .aggregate(new CounterAggregateFunction<>())
+                .timeWindowAll(Time.hours(24))
+                .aggregate(new CollectorAggregateFunction<>())
+                .map(item -> new CommentHourlyCount(0, item.get(0), item.get(1), item.get(2), item.get(3), item.get(4), item.get(5), item.get(6), item.get(7), item.get(8), item.get(9), item.get(10), item.get(11)));
+
+        // Query 3
 
 
-		//stream.print();
-		top3Articles.print();
+        //stream.print();
+        top3Articles.print();
+        commentsCount.print();
 
-		// execute program
-		env.execute("JASMINE Stream");
-	}
+        // execute program
+        env.execute("JASMINE Stream");
+    }
 }

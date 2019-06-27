@@ -1,13 +1,11 @@
 package org.jasmine.stream.models;
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.jasmine.stream.utils.JSONStringable;
 
 /**
  * CommentInfo class
  * It represents information provided by dataset
- * */
+ */
 public class CommentInfo implements JSONStringable {
 
     private long approveDate;

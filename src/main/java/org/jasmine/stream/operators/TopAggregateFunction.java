@@ -1,13 +1,7 @@
 package org.jasmine.stream.operators;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
-import org.jasmine.stream.utils.SerializableCallback;
-
-import java.lang.invoke.SerializedLambda;
-import java.util.Comparator;
-import java.util.concurrent.Callable;
 
 abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
 
