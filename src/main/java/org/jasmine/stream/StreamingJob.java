@@ -28,13 +28,12 @@ import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.CounterAggregateFunction;
 import org.jasmine.stream.operators.TopAggregateFunction;
+import org.jasmine.stream.utils.BoundedPriorityQueue;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
-import org.jasmine.stream.utils.SerializableCallback;
 
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.function.ToLongFunction;
 
 public class StreamingJob {
 
@@ -62,13 +61,16 @@ public class StreamingJob {
 				.timeWindow(Time.hours(1))
 				.aggregate(new CounterAggregateFunction<>())
 				.timeWindowAll(Time.hours(1))
-				.aggregate(new TopAggregateFunction<>(3, new SerializableCallback<Comparator<Tuple2<String, Long>>>() {
-					@Override
-					public Comparator<Tuple2<String, Long>> call() {
-						return Comparator.comparingLong(value -> value.f1);
-					}
-				}))
-				.map(item -> new Top3Article());
+				.aggregate(new TopAggregateFunction<Tuple2<String, Long>>(){
+                    @Override
+                    public BoundedPriorityQueue<Tuple2<String, Long>> createAccumulator() {
+                        return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
+                    }
+                })
+				.map(item -> {
+					Tuple2<String, Long>[] array = item.toArray();
+					return new Top3Article(0, array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1);
+				});
 
 
 		//stream.print();

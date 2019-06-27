@@ -9,20 +9,7 @@ import java.lang.invoke.SerializedLambda;
 import java.util.Comparator;
 import java.util.concurrent.Callable;
 
-public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
-
-    private int maxItems;
-    private SerializableCallback<Comparator<E>> comparator;
-
-    public TopAggregateFunction(int maxItems, SerializableCallback<Comparator<E>> comparator) {
-        this.maxItems = maxItems;
-        this.comparator = comparator;
-    }
-
-    @Override
-    public BoundedPriorityQueue<E> createAccumulator() {
-        return new BoundedPriorityQueue<>(this.maxItems, this.comparator.callNoExc());
-    }
+abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
 
     @Override
     public BoundedPriorityQueue<E> add(E e, BoundedPriorityQueue<E> boundedPriorityQueue) {

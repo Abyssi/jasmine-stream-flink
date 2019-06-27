@@ -23,4 +23,10 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> {
     public void merge(BoundedPriorityQueue<E> other) {
         this.addAll(other);
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public E[] toArray() {
+        return (E[]) super.toArray();
+    }
 }
