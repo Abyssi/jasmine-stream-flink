@@ -10,8 +10,10 @@ public class CounterAggregateFunction<E> implements AggregateFunction<E, Tuple2<
     }
 
     @Override
-    public Tuple2<E, Long> add(E s, Tuple2<E, Long> elemLongTuple2) {
-        return new Tuple2<>(s, elemLongTuple2.f1 + 1);
+    public Tuple2<E, Long> add(E e, Tuple2<E, Long> elemLongTuple2) {
+        elemLongTuple2.f0 = e;
+        elemLongTuple2.f1 += 1;
+        return elemLongTuple2;
     }
 
     @Override

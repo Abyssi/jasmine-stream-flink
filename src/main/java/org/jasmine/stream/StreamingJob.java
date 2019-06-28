@@ -19,9 +19,12 @@
 package org.jasmine.stream;
 
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.jasmine.stream.models.CommentHourlyCount;
@@ -30,6 +33,7 @@ import org.jasmine.stream.models.CommentType;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.CollectorAggregateFunction;
 import org.jasmine.stream.operators.CounterAggregateFunction;
+import org.jasmine.stream.operators.DecimalCounterAggregateFunction;
 import org.jasmine.stream.operators.TopAggregateFunction;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
 import org.jasmine.stream.utils.DateUtils;
@@ -59,6 +63,7 @@ public class StreamingJob {
                     }
                 });
 
+        new Tuple2<>()
         // Query 1
         DataStream<Top3Article> top3Articles = stream
                 .map(CommentInfo::getArticleID)
@@ -92,6 +97,31 @@ public class StreamingJob {
                 .map(item -> new CommentHourlyCount(0, item.get(0), item.get(1), item.get(2), item.get(3), item.get(4), item.get(5), item.get(6), item.get(7), item.get(8), item.get(9), item.get(10), item.get(11)));
 
         // Query 3
+
+        DataStream<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>> likesCount = stream
+                .filter(item -> item.getDepth() == 1)
+                .map(item -> new Tuple4<>(item.getUserID(), item.getRecommendations(), item.isEditorsSelection(), item.getUserDisplayName()))
+                .keyBy(item -> item.f0)
+                .timeWindow(Time.hours(24))
+                .aggregate(new DecimalCounterAggregateFunction<Tuple4<Long, Long, Boolean, String>>() {
+                    @Override
+                    public Tuple2<Tuple4<Long, Long, Boolean, String>, Double> add(Tuple4<Long, Long, Boolean, String> e, Tuple2<Tuple4<Long, Long, Boolean, String>, Double> tuple4DoubleTuple2) {
+                        tuple4DoubleTuple2.f1 += e.f1 * (e.f2 ? 1.1 : 1);
+                        return tuple4DoubleTuple2;
+                    }
+                });
+
+        DataStream<Tuple2<String, Long>> indirectCommentsCount = stream
+                .filter(item -> item.getDepth() > 1)
+                .map(CommentInfo::getParentUserDisplayName)
+                .keyBy(s -> s)
+                .timeWindow(Time.hours(24))
+                .aggregate(new CounterAggregateFunction<>());
+
+        likesCount.join(indirectCommentsCount)
+                .where(item -> item.f0.f3).equalTo(item -> item.f0)
+                .window(TumblingEventTimeWindows.of(Time.seconds(3)))
+                // TODO: Finish
 
 
         //stream.print();
