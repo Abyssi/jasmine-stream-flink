@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.CounterAggregateFunction;
+import org.jasmine.stream.operators.PeekMapFunction;
 import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
 import org.jasmine.stream.operators.TopAggregateFunction;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
@@ -19,6 +20,7 @@ public class Top3ArticlesQuery {
                 .keyBy(s -> s)
                 .timeWindow(window)
                 .aggregate(new CounterAggregateFunction<>())
+                .map(new PeekMapFunction<>())
                 .timeWindowAll(window)
                 .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
                     @Override
@@ -27,7 +29,8 @@ public class Top3ArticlesQuery {
                     }
                 }, new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> {
-                    Tuple2<String, Long>[] array = item.getElement().toArray();
+                    System.out.println(item);
+                    Tuple2<String, Long>[] array = item.getElement().toSortedArray();
                     return new Top3Article(item.getTimestamp(), array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1);
                 });
     }

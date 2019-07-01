@@ -23,13 +23,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
-import org.jasmine.stream.models.TopUserRatings;
-import org.jasmine.stream.queries.CommentsCountQuery;
 import org.jasmine.stream.queries.Top3ArticlesQuery;
-import org.jasmine.stream.queries.TopUserRatingsQuery;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 
 import java.util.Objects;
@@ -44,6 +40,7 @@ public class StreamingJob {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "localhost:9092");
         properties.setProperty("group.id", "test");
+        properties.setProperty("auto.offset.reset", "latest");
         DataStream<CommentInfo> inputStream = env
                 .addSource(new FlinkKafkaConsumer<>("input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
                 .filter(Objects::nonNull)
@@ -55,24 +52,24 @@ public class StreamingJob {
                 });
 
         // Query 1
-        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.hours(1));
-        DataStream<Top3Article> top3Articles24h = Top3ArticlesQuery.run(inputStream, Time.hours(24));
-        DataStream<Top3Article> top3Articles7d = Top3ArticlesQuery.run(inputStream, Time.days(7));
+        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.seconds(10));
+        //DataStream<Top3Article> top3Articles24h = Top3ArticlesQuery.run(inputStream, Time.hours(24));
+        //DataStream<Top3Article> top3Articles7d = Top3ArticlesQuery.run(inputStream, Time.days(7));
 
         // Query 2
-        DataStream<CommentHourlyCount> commentsCount24h = CommentsCountQuery.run(inputStream, Time.hours(24));
-        DataStream<CommentHourlyCount> commentsCount7d = CommentsCountQuery.run(inputStream, Time.days(7));
-        DataStream<CommentHourlyCount> commentsCount1m = CommentsCountQuery.run(inputStream, Time.days(30));
+        //DataStream<CommentHourlyCount> commentsCount24h = CommentsCountQuery.run(inputStream, Time.hours(24));
+        //DataStream<CommentHourlyCount> commentsCount7d = CommentsCountQuery.run(inputStream, Time.days(7));
+        //DataStream<CommentHourlyCount> commentsCount1m = CommentsCountQuery.run(inputStream, Time.days(30));
 
         // Query 3
-        DataStream<TopUserRatings> topUserRatings24h = TopUserRatingsQuery.run(inputStream, Time.hours(24));
-        DataStream<TopUserRatings> topUserRatings7d = TopUserRatingsQuery.run(inputStream, Time.days(7));
-        DataStream<TopUserRatings> topUserRatings1m = TopUserRatingsQuery.run(inputStream, Time.days(30));
+        //DataStream<TopUserRatings> topUserRatings24h = TopUserRatingsQuery.run(inputStream, Time.hours(24));
+        //DataStream<TopUserRatings> topUserRatings7d = TopUserRatingsQuery.run(inputStream, Time.days(7));
+        //DataStream<TopUserRatings> topUserRatings1m = TopUserRatingsQuery.run(inputStream, Time.days(30));
 
         //inputStream.print();
         top3Articles1h.print();
-        commentsCount24h.print();
-        topUserRatings24h.print();
+        //commentsCount24h.print();
+        //topUserRatings24h.print();
 
         // execute program
         env.execute("JASMINE Stream");

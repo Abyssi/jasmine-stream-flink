@@ -58,7 +58,7 @@ public class TopUserRatingsQuery {
                     }
                 }, new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> {
-                    Tuple2<Long, Double>[] array = item.getElement().toArray();
+                    Tuple2<Long, Double>[] array = item.getElement().toSortedArray();
                     return new TopUserRatings(item.getTimestamp(), array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1, array[3].f0, array[3].f1, array[4].f0, array[4].f1, array[5].f0, array[5].f1, array[6].f0, array[6].f1, array[7].f0, array[7].f1, array[8].f0, array[8].f1, array[9].f0, array[9].f1);
                 });
     }
