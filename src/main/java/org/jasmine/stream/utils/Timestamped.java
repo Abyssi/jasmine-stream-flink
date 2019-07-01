@@ -8,7 +8,7 @@ public class Timestamped<E> {
         this.e = e;
     }
 
-    public E getE() {
+    public E getElement() {
         return e;
     }
 

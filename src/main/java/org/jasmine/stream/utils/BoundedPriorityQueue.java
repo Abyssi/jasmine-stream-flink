@@ -1,6 +1,8 @@
 package org.jasmine.stream.utils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.PriorityQueue;
 
 public class BoundedPriorityQueue<E> extends PriorityQueue<E> {
@@ -28,6 +30,8 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> {
     @SuppressWarnings("unchecked")
     @Override
     public E[] toArray() {
-        return (E[]) super.toArray();
+        List<E> list = new ArrayList<>(this);
+        list.sort(this.comparator());
+        return (E[]) list.toArray();
     }
 }
