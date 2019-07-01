@@ -1,6 +1,7 @@
 package org.jasmine.stream.queries;
 
 import org.apache.flink.api.common.functions.JoinFunction;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -20,7 +21,7 @@ public class TopUserRatingsQuery {
     public static DataStream<TopUserRatings> run(DataStream<CommentInfo> inputStream, Time window) {
         DataStream<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>> likesCount = inputStream
                 .filter(item -> item.getDepth() == 1)
-                .map(item -> new Tuple4<>(item.getUserID(), item.getRecommendations(), item.isEditorsSelection(), item.getUserDisplayName()))
+                .map(item -> new Tuple4<>(item.getUserID(), item.getRecommendations(), item.isEditorsSelection(), item.getUserDisplayName())).returns(Types.TUPLE(Types.LONG, Types.LONG, Types.BOOLEAN, Types.STRING))
                 .keyBy(item -> item.f0)
                 .timeWindow(window)
                 .aggregate(new DecimalCounterAggregateFunction<Tuple4<Long, Long, Boolean, String>>() {
@@ -43,7 +44,12 @@ public class TopUserRatingsQuery {
         return likesCount.join(indirectCommentsCount)
                 .where(item -> item.f0.f3).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window))
-                .apply((JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>) (tuple4DoubleTuple2, stringLongTuple2) -> new Tuple2<>(tuple4DoubleTuple2.f0.f0, wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1))
+                .apply(new JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>() {
+                    @Override
+                    public Tuple2<Long, Double> join(Tuple2<Tuple4<Long, Long, Boolean, String>, Double> tuple4DoubleTuple2, Tuple2<String, Long> stringLongTuple2) throws Exception {
+                        return new Tuple2<>(tuple4DoubleTuple2.f0.f0, wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1);
+                    }
+                })
                 .timeWindowAll(window)
                 .aggregate(new TopAggregateFunction<Tuple2<Long, Double>>() {
                     @Override
