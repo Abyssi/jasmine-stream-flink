@@ -18,6 +18,7 @@
 
 package org.jasmine.stream;
 
+import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.tuple.Tuple5;
@@ -27,10 +28,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.jasmine.stream.models.CommentHourlyCount;
-import org.jasmine.stream.models.CommentInfo;
-import org.jasmine.stream.models.CommentType;
-import org.jasmine.stream.models.Top3Article;
+import org.jasmine.stream.models.*;
 import org.jasmine.stream.operators.CollectorAggregateFunction;
 import org.jasmine.stream.operators.CounterAggregateFunction;
 import org.jasmine.stream.operators.DecimalCounterAggregateFunction;
@@ -53,7 +51,7 @@ public class StreamingJob {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "localhost:9092");
         properties.setProperty("group.id", "test");
-        DataStream<CommentInfo> stream = env
+        DataStream<CommentInfo> inputStream = env
                 .addSource(new FlinkKafkaConsumer<>("input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
                 .filter(Objects::nonNull)
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
@@ -63,9 +61,8 @@ public class StreamingJob {
                     }
                 });
 
-        new Tuple2<>()
         // Query 1
-        DataStream<Top3Article> top3Articles = stream
+        DataStream<Top3Article> top3Articles = inputStream
                 .map(CommentInfo::getArticleID)
                 .keyBy(s -> s)
                 .timeWindow(Time.hours(1))
@@ -83,7 +80,7 @@ public class StreamingJob {
                 });
 
         // Query 2
-        DataStream<CommentHourlyCount> commentsCount = stream
+        DataStream<CommentHourlyCount> commentsCount = inputStream
                 .filter(item -> item.getCommentType() == CommentType.COMMENT)
                 .map(item -> {
                     Calendar calendar = DateUtils.parseCalendar(item.getCreateDate());
@@ -97,8 +94,7 @@ public class StreamingJob {
                 .map(item -> new CommentHourlyCount(0, item.get(0), item.get(1), item.get(2), item.get(3), item.get(4), item.get(5), item.get(6), item.get(7), item.get(8), item.get(9), item.get(10), item.get(11)));
 
         // Query 3
-
-        DataStream<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>> likesCount = stream
+        DataStream<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>> likesCount = inputStream
                 .filter(item -> item.getDepth() == 1)
                 .map(item -> new Tuple4<>(item.getUserID(), item.getRecommendations(), item.isEditorsSelection(), item.getUserDisplayName()))
                 .keyBy(item -> item.f0)
@@ -111,22 +107,34 @@ public class StreamingJob {
                     }
                 });
 
-        DataStream<Tuple2<String, Long>> indirectCommentsCount = stream
+        DataStream<Tuple2<String, Long>> indirectCommentsCount = inputStream
                 .filter(item -> item.getDepth() > 1)
                 .map(CommentInfo::getParentUserDisplayName)
                 .keyBy(s -> s)
                 .timeWindow(Time.hours(24))
                 .aggregate(new CounterAggregateFunction<>());
 
-        likesCount.join(indirectCommentsCount)
+        double wa = 0.3;
+        double wb = 0.7;
+        DataStream<TopUserRatings> topUserRatings = likesCount.join(indirectCommentsCount)
                 .where(item -> item.f0.f3).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(Time.seconds(3)))
-                // TODO: Finish
+                .apply((JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>) (tuple4DoubleTuple2, stringLongTuple2) -> new Tuple2<>(tuple4DoubleTuple2.f0.f0, wa*tuple4DoubleTuple2.f1 + wb*stringLongTuple2.f1))
+                .timeWindowAll(Time.hours(1))
+                .aggregate(new TopAggregateFunction<Tuple2<Long, Double>>() {
+                    @Override
+                    public BoundedPriorityQueue<Tuple2<Long, Double>> createAccumulator() {
+                        return new BoundedPriorityQueue<>(3, Comparator.comparingDouble(value -> value.f1));
+                    }
+                }).map(item -> {
+                    Tuple2<Long, Double>[] array = item.toArray();
+                    return new TopUserRatings(0, array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1, array[3].f0, array[3].f1, array[4].f0, array[4].f1, array[5].f0, array[5].f1, array[6].f0, array[6].f1, array[7].f0, array[7].f1, array[8].f0, array[8].f1, array[9].f0, array[9].f1);
+                });
 
-
-        //stream.print();
+        //inputStream.print();
         top3Articles.print();
         commentsCount.print();
+        topUserRatings.print();
 
         // execute program
         env.execute("JASMINE Stream");
