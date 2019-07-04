@@ -60,12 +60,12 @@ public class StreamingJob {
         //inputStream.map(new PeekMapFunction<>());
 
         // Query 1
-        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.hours(1));
+        //DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.hours(1));
         //DataStream<Top3Article> top3Articles24h = Top3ArticlesQuery.run(inputStream, Time.hours(24));
         //DataStream<Top3Article> top3Articles7d = Top3ArticlesQuery.run(inputStream, Time.days(7));
 
         // Query 2
-        //DataStream<CommentHourlyCount> commentsCount24h = CommentsCountQuery.run(inputStream, Time.hours(24));
+        DataStream<CommentHourlyCount> commentsCount24h = CommentsCountQuery.run(inputStream, Time.hours(24));
         //DataStream<CommentHourlyCount> commentsCount7d = CommentsCountQuery.run(inputStream, Time.days(7));
         //DataStream<CommentHourlyCount> commentsCount1m = CommentsCountQuery.run(inputStream, Time.days(30));
 
@@ -75,8 +75,8 @@ public class StreamingJob {
         //DataStream<TopUserRatings> topUserRatings1m = TopUserRatingsQuery.run(inputStream, Time.days(30));
 
         //inputStream.print();
-        top3Articles1h.print();
-        //commentsCount24h.print();
+        //top3Articles1h.print();
+        commentsCount24h.print();
         //topUserRatings24h.print();
 
         // execute program
