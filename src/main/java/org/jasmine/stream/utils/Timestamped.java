@@ -1,11 +1,14 @@
 package org.jasmine.stream.utils;
 
-public class Timestamped<E> {
+import java.io.Serializable;
+
+public class Timestamped<E> implements Serializable, JSONStringable {
     private long timestamp;
     private E e;
 
     public Timestamped(E e, long timestamp) {
         this.e = e;
+        this.timestamp = timestamp;
     }
 
     public E getElement() {
@@ -18,5 +21,10 @@ public class Timestamped<E> {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    @Override
+    public String toString() {
+        return this.toJSONString();
     }
 }

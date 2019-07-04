@@ -1,9 +1,10 @@
 package org.jasmine.stream.utils;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-public class BoundedPriorityQueue<E> extends PriorityQueue<E> {
+public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Serializable {
 
     private int maxItems;
 
@@ -19,10 +20,9 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> {
             boolean success = super.offer(e);
             if (!success) return false;
             else if (this.size() > maxItems) this.poll();
-            //else if (this.size() > maxItems) this.remove(this.toArray()[this.size()-1]);
             return true;
         } catch (Exception error) {
-            System.out.println(e);
+            System.out.println("Error: " + error);
         }
         return false;
     }

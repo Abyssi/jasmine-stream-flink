@@ -28,10 +28,11 @@ public class Top3ArticlesQuery {
                         return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
                     }
                 }, new TimestampEnrichProcessAllWindowFunction<>())
+                .map(new PeekMapFunction<>())
                 .map(item -> {
-                    System.out.println(item);
-                    Tuple2<String, Long>[] array = item.getElement().toSortedArray();
-                    return new Top3Article(item.getTimestamp(), array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1);
+                    return null;
+                    //Tuple2<String, Long>[] array = item.getElement().toSortedArray();
+                    //return new Top3Article(item.getTimestamp(), array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1);
                 });
     }
 }

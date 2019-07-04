@@ -25,6 +25,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
+import org.jasmine.stream.operators.PeekMapFunction;
 import org.jasmine.stream.queries.Top3ArticlesQuery;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 
@@ -42,7 +43,7 @@ public class StreamingJob {
         properties.setProperty("group.id", "test");
         properties.setProperty("auto.offset.reset", "latest");
         DataStream<CommentInfo> inputStream = env
-                .addSource(new FlinkKafkaConsumer<>("input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
+                .addSource(new FlinkKafkaConsumer<>("jasmine_input_topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
                 .filter(Objects::nonNull)
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
                     @Override
@@ -51,8 +52,10 @@ public class StreamingJob {
                     }
                 });
 
+        //inputStream.map(new PeekMapFunction<>());
+
         // Query 1
-        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.seconds(10));
+        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.minutes(20));
         //DataStream<Top3Article> top3Articles24h = Top3ArticlesQuery.run(inputStream, Time.hours(24));
         //DataStream<Top3Article> top3Articles7d = Top3ArticlesQuery.run(inputStream, Time.days(7));
 
