@@ -2,6 +2,7 @@ package org.jasmine.stream.queries;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
@@ -17,9 +18,9 @@ public class Top3ArticlesQuery {
         return inputStream
                 .map(CommentInfo::getArticleID)
                 .keyBy(s -> s)
-                .timeWindow(window)
+                .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
-                .timeWindowAll(window)
+                .windowAll(TumblingEventTimeWindows.of(window))
                 .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
                     @Override
                     @SuppressWarnings("unchecked")

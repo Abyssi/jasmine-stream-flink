@@ -1,6 +1,7 @@
 package org.jasmine.stream.queries;
 
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
@@ -22,9 +23,9 @@ public class CommentsCountQuery {
                     return (int) Math.floor(calendar.get(Calendar.HOUR_OF_DAY) / 2.0);
                 })
                 .keyBy(s -> s)
-                .timeWindow(window)
+                .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
-                .timeWindowAll(window)
+                .windowAll(TumblingEventTimeWindows.of(window))
                 .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> {
                     HashMap<Integer, Long> value = item.getElement();

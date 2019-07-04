@@ -20,7 +20,7 @@ public class TopUserRatingsQuery {
                 .filter(item -> item.getDepth() == 1)
                 .map(item -> new Tuple4<>(item.getUserID(), item.getRecommendations(), item.isEditorsSelection(), item.getUserDisplayName())).returns(Types.TUPLE(Types.LONG, Types.LONG, Types.BOOLEAN, Types.STRING))
                 .keyBy(item -> item.f0)
-                .timeWindow(window)
+                .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new DecimalCounterAggregateFunction<Tuple4<Long, Long, Boolean, String>>() {
                     @Override
                     public Tuple2<Tuple4<Long, Long, Boolean, String>, Double> add(Tuple4<Long, Long, Boolean, String> e, Tuple2<Tuple4<Long, Long, Boolean, String>, Double> tuple4DoubleTuple2) {
@@ -34,7 +34,7 @@ public class TopUserRatingsQuery {
                 .filter(item -> item.getDepth() > 1)
                 .map(CommentInfo::getParentUserDisplayName)
                 .keyBy(s -> s)
-                .timeWindow(window)
+                .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>());
 
         double wa = 0.3;
@@ -48,7 +48,7 @@ public class TopUserRatingsQuery {
                         return new Tuple2<>(tuple4DoubleTuple2.f0.f0, (wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1));
                     }
                 })
-                .timeWindowAll(window)
+                .windowAll(TumblingEventTimeWindows.of(window))
                 .aggregate(new TopAggregateFunction<Tuple2<Long, Double>>() {
                     @Override
                     @SuppressWarnings("unchecked")
