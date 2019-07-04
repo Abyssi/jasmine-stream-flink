@@ -18,6 +18,7 @@
 
 package org.jasmine.stream;
 
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
@@ -25,7 +26,6 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
-import org.jasmine.stream.operators.PeekMapFunction;
 import org.jasmine.stream.queries.Top3ArticlesQuery;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 
@@ -37,6 +37,7 @@ public class StreamingJob {
     public static void main(String[] args) throws Exception {
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "localhost:9092");
@@ -48,14 +49,14 @@ public class StreamingJob {
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
                     @Override
                     public long extractAscendingTimestamp(CommentInfo commentInfo) {
-                        return commentInfo.getCreateDate();
+                        return commentInfo.getCreateDate() * 1000;
                     }
                 });
 
         //inputStream.map(new PeekMapFunction<>());
 
         // Query 1
-        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.minutes(20));
+        DataStream<Top3Article> top3Articles1h = Top3ArticlesQuery.run(inputStream, Time.hours(1));
         //DataStream<Top3Article> top3Articles24h = Top3ArticlesQuery.run(inputStream, Time.hours(24));
         //DataStream<Top3Article> top3Articles7d = Top3ArticlesQuery.run(inputStream, Time.days(7));
 

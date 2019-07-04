@@ -4,15 +4,15 @@ import java.io.Serializable;
 
 public class Timestamped<E> implements Serializable, JSONStringable {
     private long timestamp;
-    private E e;
+    private E element;
 
-    public Timestamped(E e, long timestamp) {
-        this.e = e;
+    public Timestamped(E element, long timestamp) {
+        this.element = element;
         this.timestamp = timestamp;
     }
 
     public E getElement() {
-        return e;
+        return element;
     }
 
     public long getTimestamp() {

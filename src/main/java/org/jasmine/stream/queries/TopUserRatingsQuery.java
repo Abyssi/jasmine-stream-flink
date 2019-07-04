@@ -53,12 +53,18 @@ public class TopUserRatingsQuery {
                 .timeWindowAll(window)
                 .aggregate(new TopAggregateFunction<Tuple2<Long, Double>>() {
                     @Override
+                    @SuppressWarnings("unchecked")
+                    public Class<Tuple2<Long, Double>> getElementClass() {
+                        return (Class<Tuple2<Long, Double>>) (Class<?>) Tuple2.class;
+                    }
+
+                    @Override
                     public BoundedPriorityQueue<Tuple2<Long, Double>> createAccumulator() {
                         return new BoundedPriorityQueue<>(10, Comparator.comparingDouble(value -> value.f1));
                     }
                 }, new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> {
-                    Tuple2<Long, Double>[] array = item.getElement().toSortedArray();
+                    Tuple2<Long, Double>[] array = item.getElement();
                     return new TopUserRatings(item.getTimestamp(), array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1, array[3].f0, array[3].f1, array[4].f0, array[4].f1, array[5].f0, array[5].f1, array[6].f0, array[6].f1, array[7].f0, array[7].f1, array[8].f0, array[8].f1, array[9].f0, array[9].f1);
                 });
     }

@@ -3,7 +3,7 @@ package org.jasmine.stream.operators;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
 
-abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
+abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, E[]> {
 
     @Override
     public BoundedPriorityQueue<E> add(E e, BoundedPriorityQueue<E> boundedPriorityQueue) {
@@ -12,8 +12,8 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<E, Bo
     }
 
     @Override
-    public BoundedPriorityQueue<E> getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
-        return boundedPriorityQueue;
+    public E[] getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
+        return boundedPriorityQueue.toSortedArray(this.getElementClass());
     }
 
     @Override
@@ -21,4 +21,6 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<E, Bo
         acc1.merge(boundedPriorityQueue);
         return acc1;
     }
+
+    public abstract Class<E> getElementClass();
 }

@@ -11,6 +11,9 @@ public class Top3Article implements JSONStringable {
     private String artID3;
     private long nCmnt3;
 
+    public Top3Article() {
+    }
+
     public Top3Article(long ts, String artID1, long nCmnt1, String artID2, long nCmnt2, String artID3, long nCmnt3) {
         this.ts = ts;
         this.artID1 = artID1;
