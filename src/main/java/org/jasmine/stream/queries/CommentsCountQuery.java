@@ -28,7 +28,7 @@ public class CommentsCountQuery {
                 .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> {
                     HashMap<Integer, Long> value = item.getElement();
-                    return new CommentHourlyCount(item.getTimestamp(), value.get(0), value.get(1), value.get(2), value.get(3), value.get(4), value.get(5), value.get(6), value.get(7), value.get(8), value.get(9), value.get(10), value.get(11));
+                    return new CommentHourlyCount(item.getTimestamp(), value.getOrDefault(0, 0L), value.getOrDefault(1, 0L), value.getOrDefault(2, 0L), value.getOrDefault(3, 0L), value.getOrDefault(4, 0L), value.getOrDefault(5, 0L), value.getOrDefault(6, 0L), value.getOrDefault(7, 0L), value.getOrDefault(8, 0L), value.getOrDefault(9, 0L), value.getOrDefault(10, 0L), value.getOrDefault(11, 0L));
                 });
     }
 }

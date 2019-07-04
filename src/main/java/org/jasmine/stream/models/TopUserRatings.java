@@ -1,6 +1,8 @@
 package org.jasmine.stream.models;
 
-public class TopUserRatings {
+import org.jasmine.stream.utils.JSONStringable;
+
+public class TopUserRatings implements JSONStringable {
     private long ts;
     private long user_1;
     private double rating_1;
@@ -213,5 +215,10 @@ public class TopUserRatings {
 
     public void setRating_10(double rating_10) {
         this.rating_10 = rating_10;
+    }
+
+    @Override
+    public String toString() {
+        return this.toJSONString();
     }
 }

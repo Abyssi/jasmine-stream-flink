@@ -24,9 +24,13 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
+import org.jasmine.stream.models.TopUserRatings;
+import org.jasmine.stream.queries.CommentsCountQuery;
 import org.jasmine.stream.queries.Top3ArticlesQuery;
+import org.jasmine.stream.queries.TopUserRatingsQuery;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 
 import java.util.Objects;

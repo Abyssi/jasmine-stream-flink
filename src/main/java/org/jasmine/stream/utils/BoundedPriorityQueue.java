@@ -2,6 +2,7 @@ package org.jasmine.stream.utils;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
@@ -10,7 +11,7 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
     private int maxItems;
 
     public BoundedPriorityQueue(int maxItems, Comparator<? super E> comparator) {
-        super(comparator.reversed());
+        super(comparator);
         this.maxItems = maxItems;
     }
 
@@ -34,11 +35,15 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
 
     @SuppressWarnings("unchecked")
     public E[] toSortedArray() {
-        return (E[]) this.toArray();
+        E[] array = (E[]) this.toArray();
+        Arrays.sort(array, this.comparator().reversed());
+        return array;
     }
 
     @SuppressWarnings("unchecked")
     public E[] toSortedArray(Class<E> eClass) {
-        return this.toArray((E[]) Array.newInstance(eClass, this.size()));
+        E[] array = this.toArray((E[]) Array.newInstance(eClass, this.size()));
+        Arrays.sort(array, this.comparator().reversed());
+        return array;
     }
 }

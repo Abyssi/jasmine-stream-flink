@@ -9,10 +9,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.TopUserRatings;
-import org.jasmine.stream.operators.CounterAggregateFunction;
-import org.jasmine.stream.operators.DecimalCounterAggregateFunction;
-import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
-import org.jasmine.stream.operators.TopAggregateFunction;
+import org.jasmine.stream.operators.*;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
 
 import java.util.Comparator;
@@ -27,6 +24,7 @@ public class TopUserRatingsQuery {
                 .aggregate(new DecimalCounterAggregateFunction<Tuple4<Long, Long, Boolean, String>>() {
                     @Override
                     public Tuple2<Tuple4<Long, Long, Boolean, String>, Double> add(Tuple4<Long, Long, Boolean, String> e, Tuple2<Tuple4<Long, Long, Boolean, String>, Double> tuple4DoubleTuple2) {
+                        tuple4DoubleTuple2.f0 = e;
                         tuple4DoubleTuple2.f1 += e.f1 * (e.f2 ? 1.1 : 1);
                         return tuple4DoubleTuple2;
                     }
@@ -47,7 +45,7 @@ public class TopUserRatingsQuery {
                 .apply(new JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>() {
                     @Override
                     public Tuple2<Long, Double> join(Tuple2<Tuple4<Long, Long, Boolean, String>, Double> tuple4DoubleTuple2, Tuple2<String, Long> stringLongTuple2) throws Exception {
-                        return new Tuple2<>(tuple4DoubleTuple2.f0.f0, wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1);
+                        return new Tuple2<>(tuple4DoubleTuple2.f0.f0, (wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1));
                     }
                 })
                 .timeWindowAll(window)
@@ -65,7 +63,7 @@ public class TopUserRatingsQuery {
                 }, new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> {
                     Tuple2<Long, Double>[] array = item.getElement();
-                    return new TopUserRatings(item.getTimestamp(), array[0].f0, array[0].f1, array[1].f0, array[1].f1, array[2].f0, array[2].f1, array[3].f0, array[3].f1, array[4].f0, array[4].f1, array[5].f0, array[5].f1, array[6].f0, array[6].f1, array[7].f0, array[7].f1, array[8].f0, array[8].f1, array[9].f0, array[9].f1);
+                    return new TopUserRatings(item.getTimestamp(), array.length > 0 ? array[0].f0 : 0, array.length > 0 ? array[0].f1 : 0, array.length > 1 ? array[1].f0 : 0, array.length > 1 ? array[1].f1 : 0, array.length > 2 ? array[2].f0 : 0, array.length > 2 ? array[2].f1 : 0, array.length > 3 ? array[3].f0 : 0, array.length > 3 ? array[3].f1 : 0, array.length > 4 ? array[4].f0 : 0, array.length > 4 ? array[4].f1 : 0, array.length > 5 ? array[5].f0 : 0, array.length > 5 ? array[5].f1 : 0, array.length > 6 ? array[6].f0 : 0, array.length > 6 ? array[6].f1 : 0, array.length > 7 ? array[7].f0 : 0, array.length > 7 ? array[7].f1 : 0, array.length > 8 ? array[8].f0 : 0, array.length > 8 ? array[8].f1 : 0, array.length > 9 ? array[9].f0 : 0, array.length > 9 ? array[9].f1 : 0);
                 });
     }
 }

@@ -1,6 +1,8 @@
 package org.jasmine.stream.models;
 
-public class CommentHourlyCount {
+import org.jasmine.stream.utils.JSONStringable;
+
+public class CommentHourlyCount implements JSONStringable {
     private long ts;
     private long count_h00; //00:00:00 a 01:59:59
     private long count_h02; //02:00:00 a 03:59:59
@@ -133,5 +135,10 @@ public class CommentHourlyCount {
 
     public void setCount_h22(long count_h22) {
         this.count_h22 = count_h22;
+    }
+
+    @Override
+    public String toString() {
+        return this.toJSONString();
     }
 }
