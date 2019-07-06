@@ -24,14 +24,12 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
-import org.jasmine.stream.models.Top3Article;
-import org.jasmine.stream.models.TopUserRatings;
 import org.jasmine.stream.queries.CommentsCountQuery;
-import org.jasmine.stream.queries.Top3ArticlesQuery;
-import org.jasmine.stream.queries.TopUserRatingsQuery;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
+import org.jasmine.stream.utils.JSONClassSerializationSchema;
 
 import java.util.Objects;
 import java.util.Properties;
@@ -48,7 +46,7 @@ public class StreamingJob {
         properties.setProperty("group.id", "test");
         properties.setProperty("auto.offset.reset", "latest");
         DataStream<CommentInfo> inputStream = env
-                .addSource(new FlinkKafkaConsumer<>("jasmine_input_topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
+                .addSource(new FlinkKafkaConsumer<>("jasmine-input-topic", new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
                 .filter(Objects::nonNull)
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
                     @Override
@@ -78,6 +76,7 @@ public class StreamingJob {
         //top3Articles1h.print();
         commentsCount24h.print();
         //topUserRatings24h.print();
+        commentsCount24h.addSink(new FlinkKafkaProducer011<>("localhost:9092", "jasmine-commentsCount24h-output-topic", new JSONClassSerializationSchema<>()));
 
         // execute program
         env.execute("JASMINE Stream");

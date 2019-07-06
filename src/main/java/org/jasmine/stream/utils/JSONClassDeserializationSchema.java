@@ -1,11 +1,10 @@
 package org.jasmine.stream.utils;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
 
 public class JSONClassDeserializationSchema<T> implements DeserializationSchema<T> {
     private static final long serialVersionUID = 1509391548173891955L;
@@ -16,7 +15,7 @@ public class JSONClassDeserializationSchema<T> implements DeserializationSchema<
         this.itemClass = itemClass;
     }
 
-    public T deserialize(byte[] bytes) throws IOException {
+    public T deserialize(byte[] bytes) {
         if (this.mapper == null)
             this.mapper = new ObjectMapper();
         try {
