@@ -29,12 +29,10 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>());
 
-        double wa = 0.3;
-        double wb = 0.7;
         return likesCount.join(indirectCommentsCount)
                 .where(item -> item.f0.f3).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window))
-                .apply((JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>) (tuple4DoubleTuple2, stringLongTuple2) -> new Tuple2<>(tuple4DoubleTuple2.f0.f0, (wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1)))
+                .apply(new LikesAndCommentsJoinFunction())
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
@@ -54,12 +52,12 @@ public class TopUserRatingsQuery {
                 .aggregate(new CustomLikesCounterAggregateFunction());
 
         DataStream<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>> likesCountWindow7dStream = likesCountWindow24hStream
-                .keyBy(s -> s.f0)
+                .keyBy(new KeyValueKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window7d))
                 .reduce(new DecimalCounterReduceFunction<>());
 
         DataStream<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>> likesCountWindow1MStream = likesCountWindow7dStream
-                .keyBy(s -> s.f0)
+                .keyBy(new KeyValueKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window1M))
                 .reduce(new DecimalCounterReduceFunction<>());
 
@@ -80,12 +78,10 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window1M))
                 .reduce(new CounterReduceFunction<>());
 
-        double wa = 0.3;
-        double wb = 0.7;
         DataStream<TopUserRatings> window24hStream = likesCountWindow24hStream.join(indirectCommentsCountWindow24hStream)
                 .where(item -> item.f0.f3).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window24h))
-                .apply((JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>) (tuple4DoubleTuple2, stringLongTuple2) -> new Tuple2<>(tuple4DoubleTuple2.f0.f0, (wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1)))
+                .apply(new LikesAndCommentsJoinFunction())
                 .windowAll(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
@@ -93,7 +89,7 @@ public class TopUserRatingsQuery {
         DataStream<TopUserRatings> window7dStream = likesCountWindow7dStream.join(indirectCommentsCountWindow7dStream)
                 .where(item -> item.f0.f3).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window7d))
-                .apply((JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>) (tuple4DoubleTuple2, stringLongTuple2) -> new Tuple2<>(tuple4DoubleTuple2.f0.f0, (wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1)))
+                .apply(new LikesAndCommentsJoinFunction())
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
@@ -101,7 +97,7 @@ public class TopUserRatingsQuery {
         DataStream<TopUserRatings> window1MStream = likesCountWindow1MStream.join(indirectCommentsCountWindow1MStream)
                 .where(item -> item.f0.f3).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window1M))
-                .apply((JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>>) (tuple4DoubleTuple2, stringLongTuple2) -> new Tuple2<>(tuple4DoubleTuple2.f0.f0, (wa * tuple4DoubleTuple2.f1 + wb * stringLongTuple2.f1)))
+                .apply(new LikesAndCommentsJoinFunction())
                 .windowAll(TumblingEventTimeWindows.of(window1M))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
@@ -117,4 +113,13 @@ public class TopUserRatingsQuery {
             return tuple4DoubleTuple2;
         }
     }
+
+    private static class LikesAndCommentsJoinFunction implements JoinFunction<Tuple2<Tuple4<Long, Long, Boolean, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>> {
+        @Override
+        public Tuple2<Long, Double> join(Tuple2<Tuple4<Long, Long, Boolean, String>, Double> tuple4DoubleTuple2, Tuple2<String, Long> stringLongTuple2) {
+            return new Tuple2<>(tuple4DoubleTuple2.f0.f0, (.3 * tuple4DoubleTuple2.f1 + .7 * stringLongTuple2.f1));
+        }
+    }
+
+
 }
