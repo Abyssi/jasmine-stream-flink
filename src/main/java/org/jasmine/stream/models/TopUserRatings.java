@@ -1,5 +1,6 @@
 package org.jasmine.stream.models;
 
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.jasmine.stream.utils.JSONStringable;
 
 public class TopUserRatings implements JSONStringable {
@@ -47,6 +48,10 @@ public class TopUserRatings implements JSONStringable {
         this.rating_9 = rating_9;
         this.user_10 = user_10;
         this.rating_10 = rating_10;
+    }
+
+    public TopUserRatings(long timestamp, Tuple2<Long, Double>[] array) {
+        this(timestamp, array.length > 0 ? array[0].f0 : 0, array.length > 0 ? array[0].f1 : 0, array.length > 1 ? array[1].f0 : 0, array.length > 1 ? array[1].f1 : 0, array.length > 2 ? array[2].f0 : 0, array.length > 2 ? array[2].f1 : 0, array.length > 3 ? array[3].f0 : 0, array.length > 3 ? array[3].f1 : 0, array.length > 4 ? array[4].f0 : 0, array.length > 4 ? array[4].f1 : 0, array.length > 5 ? array[5].f0 : 0, array.length > 5 ? array[5].f1 : 0, array.length > 6 ? array[6].f0 : 0, array.length > 6 ? array[6].f1 : 0, array.length > 7 ? array[7].f0 : 0, array.length > 7 ? array[7].f1 : 0, array.length > 8 ? array[8].f0 : 0, array.length > 8 ? array[8].f1 : 0, array.length > 9 ? array[9].f0 : 0, array.length > 9 ? array[9].f1 : 0);
     }
 
     public long getTs() {

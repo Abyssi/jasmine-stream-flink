@@ -1,5 +1,6 @@
 package org.jasmine.stream.models;
 
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.jasmine.stream.utils.JSONStringable;
 
 public class Top3Article implements JSONStringable {
@@ -22,6 +23,10 @@ public class Top3Article implements JSONStringable {
         this.nCmnt2 = nCmnt2;
         this.artID3 = artID3;
         this.nCmnt3 = nCmnt3;
+    }
+
+    public Top3Article(long timestamp, Tuple2<String, Long>[] array) {
+        this(timestamp, array.length > 0 ? array[0].f0 : "", array.length > 0 ? array[0].f1 : 0, array.length > 1 ? array[1].f0 : "", array.length > 1 ? array[1].f1 : 0, array.length > 2 ? array[2].f0 : "", array.length > 2 ? array[2].f1 : 0);
     }
 
     public long getTs() {

@@ -2,6 +2,8 @@ package org.jasmine.stream.models;
 
 import org.jasmine.stream.utils.JSONStringable;
 
+import java.util.HashMap;
+
 public class CommentHourlyCount implements JSONStringable {
     private long ts;
     private long count_h00; //00:00:00 a 01:59:59
@@ -31,6 +33,10 @@ public class CommentHourlyCount implements JSONStringable {
         this.count_h18 = count_h18;
         this.count_h20 = count_h20;
         this.count_h22 = count_h22;
+    }
+
+    public CommentHourlyCount(long timestamp, HashMap<Integer, Long> hashMap) {
+        this(timestamp, hashMap.getOrDefault(0, 0L), hashMap.getOrDefault(1, 0L), hashMap.getOrDefault(2, 0L), hashMap.getOrDefault(3, 0L), hashMap.getOrDefault(4, 0L), hashMap.getOrDefault(5, 0L), hashMap.getOrDefault(6, 0L), hashMap.getOrDefault(7, 0L), hashMap.getOrDefault(8, 0L), hashMap.getOrDefault(9, 0L), hashMap.getOrDefault(10, 0L), hashMap.getOrDefault(11, 0L));
     }
 
     public long getTs() {
