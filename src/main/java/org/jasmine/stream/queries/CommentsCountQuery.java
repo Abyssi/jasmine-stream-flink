@@ -21,10 +21,7 @@ public class CommentsCountQuery {
     public static DataStream<CommentHourlyCount> run(DataStream<CommentInfo> inputStream, Time window) {
         return inputStream
                 .filter(item -> item.getCommentType() == CommentType.COMMENT)
-                .map(item -> {
-                    Calendar calendar = DateUtils.parseCalendar(item.getCreateDate());
-                    return (int) Math.floor(calendar.get(Calendar.HOUR_OF_DAY) / 2.0);
-                })
+                .map(item -> (int) Math.floor(DateUtils.parseCalendar(item.getCreateDate()).get(Calendar.HOUR_OF_DAY) / 2.0))
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
@@ -41,10 +38,7 @@ public class CommentsCountQuery {
 
         DataStream<Tuple2<Integer, Long>> intermediateWindow24hStream = inputStream
                 .filter(item -> item.getCommentType() == CommentType.COMMENT)
-                .map(item -> {
-                    Calendar calendar = DateUtils.parseCalendar(item.getCreateDate());
-                    return (int) Math.floor(calendar.get(Calendar.HOUR_OF_DAY) / 2.0);
-                })
+                .map(item -> (int) Math.floor(DateUtils.parseCalendar(item.getCreateDate()).get(Calendar.HOUR_OF_DAY) / 2.0))
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new CounterAggregateFunction<>());

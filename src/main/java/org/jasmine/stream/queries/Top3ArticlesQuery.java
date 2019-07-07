@@ -9,11 +9,8 @@ import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.CounterAggregateFunction;
 import org.jasmine.stream.operators.CounterReduceFunction;
+import org.jasmine.stream.operators.KeyValueTopAggregateFunction;
 import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
-import org.jasmine.stream.operators.TopAggregateFunction;
-import org.jasmine.stream.utils.BoundedPriorityQueue;
-
-import java.util.Comparator;
 
 public class Top3ArticlesQuery {
     @SuppressWarnings("Duplicates")
@@ -24,18 +21,7 @@ public class Top3ArticlesQuery {
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window))
-                .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
-                    @Override
-                    @SuppressWarnings("unchecked")
-                    public Class<Tuple2<String, Long>> getElementClass() {
-                        return (Class<Tuple2<String, Long>>) (Class<?>) Tuple2.class;
-                    }
-
-                    @Override
-                    public BoundedPriorityQueue<Tuple2<String, Long>> createAccumulator() {
-                        return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
-                    }
-                }, new TimestampEnrichProcessAllWindowFunction<>())
+                .aggregate(new KeyValueTopAggregateFunction<>(3), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
     }
 
@@ -63,50 +49,17 @@ public class Top3ArticlesQuery {
 
         DataStream<Top3Article> window1hStream = intermediateWindow1hStream
                 .windowAll(TumblingEventTimeWindows.of(window1h))
-                .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
-                    @Override
-                    @SuppressWarnings("unchecked")
-                    public Class<Tuple2<String, Long>> getElementClass() {
-                        return (Class<Tuple2<String, Long>>) (Class<?>) Tuple2.class;
-                    }
-
-                    @Override
-                    public BoundedPriorityQueue<Tuple2<String, Long>> createAccumulator() {
-                        return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
-                    }
-                }, new TimestampEnrichProcessAllWindowFunction<>())
+                .aggregate(new KeyValueTopAggregateFunction<>(3), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window24hStream = intermediateWindow24hStream
                 .windowAll(TumblingEventTimeWindows.of(window1h))
-                .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
-                    @Override
-                    @SuppressWarnings("unchecked")
-                    public Class<Tuple2<String, Long>> getElementClass() {
-                        return (Class<Tuple2<String, Long>>) (Class<?>) Tuple2.class;
-                    }
-
-                    @Override
-                    public BoundedPriorityQueue<Tuple2<String, Long>> createAccumulator() {
-                        return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
-                    }
-                }, new TimestampEnrichProcessAllWindowFunction<>())
+                .aggregate(new KeyValueTopAggregateFunction<>(3), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window7dStream = intermediateWindow7dStream
                 .windowAll(TumblingEventTimeWindows.of(window1h))
-                .aggregate(new TopAggregateFunction<Tuple2<String, Long>>() {
-                    @Override
-                    @SuppressWarnings("unchecked")
-                    public Class<Tuple2<String, Long>> getElementClass() {
-                        return (Class<Tuple2<String, Long>>) (Class<?>) Tuple2.class;
-                    }
-
-                    @Override
-                    public BoundedPriorityQueue<Tuple2<String, Long>> createAccumulator() {
-                        return new BoundedPriorityQueue<>(3, Comparator.comparingLong(value -> value.f1));
-                    }
-                }, new TimestampEnrichProcessAllWindowFunction<>())
+                .aggregate(new KeyValueTopAggregateFunction<>(3), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         return new Tuple3<>(window1hStream, window24hStream, window7dStream);
