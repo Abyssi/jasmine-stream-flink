@@ -10,7 +10,6 @@ import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.CommentType;
 import org.jasmine.stream.operators.CollectorAggregateFunction;
 import org.jasmine.stream.operators.CounterAggregateFunction;
-import org.jasmine.stream.operators.CounterReduceFunction;
 import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
 import org.jasmine.stream.utils.DateUtils;
 
@@ -43,30 +42,18 @@ public class CommentsCountQuery {
                 .window(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new CounterAggregateFunction<>());
 
-        DataStream<Tuple2<Integer, Long>> intermediateWindow7dStream = intermediateWindow24hStream
-                .keyBy(s -> s.f0)
-                .window(TumblingEventTimeWindows.of(window7d))
-                .reduce(new CounterReduceFunction<>());
-
-        DataStream<Tuple2<Integer, Long>> intermediateWindow1MStream = intermediateWindow7dStream
-                .keyBy(s -> s.f0)
-                .window(TumblingEventTimeWindows.of(window1M))
-                .reduce(new CounterReduceFunction<>());
-
         DataStream<CommentHourlyCount> window24hStream = intermediateWindow24hStream
                 .windowAll(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
 
-        DataStream<CommentHourlyCount> window7dStream = intermediateWindow7dStream
+        DataStream<CommentHourlyCount> window7dStream = window24hStream
                 .windowAll(TumblingEventTimeWindows.of(window7d))
-                .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
+                .reduce(CommentHourlyCount::merge);
 
-        DataStream<CommentHourlyCount> window1MStream = intermediateWindow1MStream
+        DataStream<CommentHourlyCount> window1MStream = window7dStream
                 .windowAll(TumblingEventTimeWindows.of(window1M))
-                .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
+                .reduce(CommentHourlyCount::merge);
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
     }

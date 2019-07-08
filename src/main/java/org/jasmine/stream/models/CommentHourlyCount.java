@@ -147,4 +147,21 @@ public class CommentHourlyCount implements JSONStringable {
     public String toString() {
         return this.toJSONString();
     }
+
+    public CommentHourlyCount merge(CommentHourlyCount other) {
+        this.ts = Math.min(this.ts, other.ts);
+        this.count_h00 += other.count_h00;
+        this.count_h02 += other.count_h02;
+        this.count_h04 += other.count_h04;
+        this.count_h06 += other.count_h06;
+        this.count_h08 += other.count_h08;
+        this.count_h10 += other.count_h10;
+        this.count_h12 += other.count_h12;
+        this.count_h14 += other.count_h14;
+        this.count_h16 += other.count_h16;
+        this.count_h18 += other.count_h18;
+        this.count_h20 += other.count_h20;
+        this.count_h22 += other.count_h22;
+        return this;
+    }
 }
