@@ -164,4 +164,20 @@ public class CommentHourlyCount implements JSONStringable {
         this.count_h22 += other.count_h22;
         return this;
     }
+
+    public CommentHourlyCount multiply(double multiplier) {
+        this.count_h00 *= multiplier;
+        this.count_h02 *= multiplier;
+        this.count_h04 *= multiplier;
+        this.count_h06 *= multiplier;
+        this.count_h08 *= multiplier;
+        this.count_h10 *= multiplier;
+        this.count_h12 *= multiplier;
+        this.count_h14 *= multiplier;
+        this.count_h16 *= multiplier;
+        this.count_h18 *= multiplier;
+        this.count_h20 *= multiplier;
+        this.count_h22 *= multiplier;
+        return this;
+    }
 }

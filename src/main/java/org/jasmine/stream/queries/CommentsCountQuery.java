@@ -35,25 +35,25 @@ public class CommentsCountQuery {
         Time window7d = Time.days(7);
         Time window1M = Time.days(30);
 
-        DataStream<Tuple2<Integer, Long>> intermediateWindow24hStream = inputStream
+        DataStream<CommentHourlyCount> window24hStream = inputStream
                 .filter(item -> item.getCommentType() == CommentType.COMMENT)
                 .map(item -> (int) Math.floor(DateUtils.parseCalendar(item.getCreateDate()).get(Calendar.HOUR_OF_DAY) / 2.0))
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new CounterAggregateFunction<>());
-
-        DataStream<CommentHourlyCount> window24hStream = intermediateWindow24hStream
+                .aggregate(new CounterAggregateFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
 
         DataStream<CommentHourlyCount> window7dStream = window24hStream
                 .windowAll(TumblingEventTimeWindows.of(window7d))
-                .reduce(CommentHourlyCount::merge);
+                .reduce(CommentHourlyCount::merge)
+                .map(item -> item.multiply(1d/7));
 
         DataStream<CommentHourlyCount> window1MStream = window7dStream
                 .windowAll(TumblingEventTimeWindows.of(window1M))
-                .reduce(CommentHourlyCount::merge);
+                .reduce(CommentHourlyCount::merge)
+                .map(item -> item.multiply(7d/30));
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
     }
