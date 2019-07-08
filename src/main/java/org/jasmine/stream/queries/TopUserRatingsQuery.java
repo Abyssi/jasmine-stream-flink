@@ -1,13 +1,13 @@
 package org.jasmine.stream.queries;
 
-import org.apache.flink.api.common.functions.JoinFunction;
+import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.TopUserRatings;
 import org.jasmine.stream.operators.*;
@@ -29,10 +29,10 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>());
 
-        return likesCount.join(indirectCommentsCount)
+        return likesCount.coGroup(indirectCommentsCount)
                 .where(item -> item.f0.f1).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window))
-                .apply(new LikesAndCommentsJoinFunction())
+                .apply(new LikesAndCommentsCoGroupFunction())
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
@@ -78,26 +78,26 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window1M))
                 .reduce(new CounterReduceFunction<>());
 
-        DataStream<TopUserRatings> window24hStream = likesCountWindow24hStream.join(indirectCommentsCountWindow24hStream)
+        DataStream<TopUserRatings> window24hStream = likesCountWindow24hStream.coGroup(indirectCommentsCountWindow24hStream)
                 .where(item -> item.f0.f1).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window24h))
-                .apply(new LikesAndCommentsJoinFunction())
+                .apply(new LikesAndCommentsCoGroupFunction())
                 .windowAll(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
-        DataStream<TopUserRatings> window7dStream = likesCountWindow7dStream.join(indirectCommentsCountWindow7dStream)
+        DataStream<TopUserRatings> window7dStream = likesCountWindow7dStream.coGroup(indirectCommentsCountWindow7dStream)
                 .where(item -> item.f0.f1).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window7d))
-                .apply(new LikesAndCommentsJoinFunction())
+                .apply(new LikesAndCommentsCoGroupFunction())
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
-        DataStream<TopUserRatings> window1MStream = likesCountWindow1MStream.join(indirectCommentsCountWindow1MStream)
+        DataStream<TopUserRatings> window1MStream = likesCountWindow1MStream.coGroup(indirectCommentsCountWindow1MStream)
                 .where(item -> item.f0.f1).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window1M))
-                .apply(new LikesAndCommentsJoinFunction())
+                .apply(new LikesAndCommentsCoGroupFunction())
                 .windowAll(TumblingEventTimeWindows.of(window1M))
                 .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
@@ -105,12 +105,15 @@ public class TopUserRatingsQuery {
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
     }
 
-    private static class LikesAndCommentsJoinFunction implements JoinFunction<Tuple2<Tuple2<Long, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>> {
+    private static class LikesAndCommentsCoGroupFunction implements CoGroupFunction<Tuple2<Tuple2<Long, String>, Double>, Tuple2<String, Long>, Tuple2<Long, Double>> {
         @Override
-        public Tuple2<Long, Double> join(Tuple2<Tuple2<Long, String>, Double> tuple4DoubleTuple2, Tuple2<String, Long> stringLongTuple2) {
-            return new Tuple2<>(tuple4DoubleTuple2.f0.f0, (.3 * tuple4DoubleTuple2.f1 + .7 * stringLongTuple2.f1));
+        public void coGroup(Iterable<Tuple2<Tuple2<Long, String>, Double>> iterable, Iterable<Tuple2<String, Long>> iterable1, Collector<Tuple2<Long, Double>> collector) {
+            Tuple2<Tuple2<Long, String>, Double> likesCountTuple = iterable.iterator().hasNext() ? iterable.iterator().next() : null;
+            Tuple2<String, Long> indirectCommentsCountTuple = iterable1.iterator().hasNext() ? iterable1.iterator().next() : null;
+            Long userID = likesCountTuple != null ? likesCountTuple.f0.f0 : 0L;
+            double likesCount = likesCountTuple != null ? likesCountTuple.f1 : 0d;
+            double indirectCommentsCount = indirectCommentsCountTuple != null ? indirectCommentsCountTuple.f1 : 0d;
+            collector.collect(new Tuple2<>(userID, (.3 * likesCount + .7 * indirectCommentsCount)));
         }
     }
-
-
 }
