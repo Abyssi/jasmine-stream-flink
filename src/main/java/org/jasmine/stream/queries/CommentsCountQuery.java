@@ -1,6 +1,5 @@
 package org.jasmine.stream.queries;
 
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
@@ -48,12 +47,10 @@ public class CommentsCountQuery {
         DataStream<CommentHourlyCount> window7dStream = window24hStream
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .reduce(CommentHourlyCount::merge);
-                //.map(item -> item.multiply(1d/7));
 
         DataStream<CommentHourlyCount> window1MStream = window7dStream
                 .windowAll(TumblingEventTimeWindows.of(window1M))
                 .reduce(CommentHourlyCount::merge);
-                //.map(item -> item.multiply(7d/30));
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
     }

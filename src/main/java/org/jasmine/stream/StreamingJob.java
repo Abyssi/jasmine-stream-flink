@@ -25,6 +25,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
+import org.apache.flink.streaming.connectors.redis.common.config.FlinkJedisPoolConfig;
 import org.jasmine.stream.config.Configuration;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
@@ -61,6 +62,11 @@ public class StreamingJob {
                         return commentInfo.getCreateDate() * 1000;
                     }
                 });
+
+        FlinkJedisPoolConfig jedisPoolConfig = new FlinkJedisPoolConfig.Builder()
+                .setHost(Configuration.getParameters().get("redis-hostname"))
+                .setPort(Integer.valueOf(Configuration.getParameters().get("redis-port")))
+                .build();
 
         //inputStream.print();
 
@@ -103,11 +109,11 @@ public class StreamingJob {
 
 
         // Query 3
-        //DataStream<Top3Article> topUserRatings24h = Top3ArticlesQuery.run(inputStream, Time.hours(1));
-        //DataStream<Top3Article> topUserRatings7d = Top3ArticlesQuery.run(inputStream, Time.hours(24));
-        //DataStream<Top3Article> topUserRatings1M = Top3ArticlesQuery.run(inputStream, Time.days(7));
+        //DataStream<Top3Article> topUserRatings24h = Top3ArticlesQuery.run(jedisPoolConfig, inputStream, Time.hours(1));
+        //DataStream<Top3Article> topUserRatings7d = Top3ArticlesQuery.run(jedisPoolConfig, inputStream, Time.hours(24));
+        //DataStream<Top3Article> topUserRatings1M = Top3ArticlesQuery.run(jedisPoolConfig, inputStream, Time.days(7));
 
-        Tuple3<DataStream<TopUserRatings>, DataStream<TopUserRatings>, DataStream<TopUserRatings>> topUserRatingsStreams = TopUserRatingsQuery.runAll(inputStream);
+        Tuple3<DataStream<TopUserRatings>, DataStream<TopUserRatings>, DataStream<TopUserRatings>> topUserRatingsStreams = TopUserRatingsQuery.runAll(jedisPoolConfig, inputStream);
         DataStream<TopUserRatings> topUserRatings24h = topUserRatingsStreams.f0;
         DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
         DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;

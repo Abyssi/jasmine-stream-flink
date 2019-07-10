@@ -7,6 +7,8 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.connectors.redis.RedisSink;
+import org.apache.flink.streaming.connectors.redis.common.config.FlinkJedisPoolConfig;
 import org.apache.flink.util.Collector;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.TopUserRatings;
@@ -14,7 +16,9 @@ import org.jasmine.stream.operators.*;
 
 public class TopUserRatingsQuery {
     @SuppressWarnings("Duplicates")
-    public static DataStream<TopUserRatings> run(DataStream<CommentInfo> inputStream, Time window) {
+    public static DataStream<TopUserRatings> run(FlinkJedisPoolConfig conf, DataStream<CommentInfo> inputStream, Time window) {
+        inputStream.addSink(new RedisSink<>(conf, new RedisKeyValueMapper<>(item -> String.valueOf(item.getCommentID()), item -> String.valueOf(item.getUserID()))));
+
         DataStream<Tuple2<Tuple2<Long, String>, Double>> likesCount = inputStream
                 .filter(item -> item.getDepth() == 1)
                 .map(item -> new Tuple2<>(new Tuple2<>(item.getUserID(), item.getUserDisplayName()), item.getRecommendations() * (item.isEditorsSelection() ? 1.1 : 1))).returns(Types.TUPLE(Types.TUPLE(Types.LONG, Types.STRING), Types.DOUBLE))
@@ -24,10 +28,11 @@ public class TopUserRatingsQuery {
 
         DataStream<Tuple2<String, Long>> indirectCommentsCount = inputStream
                 .filter(item -> item.getDepth() > 1)
-                .map(CommentInfo::getParentUserDisplayName)
+                .map(CommentInfo::getInReplyTo)
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
-                .aggregate(new CounterAggregateFunction<>());
+                .aggregate(new CounterAggregateFunction<>())
+                .map(new RedisKeyValueMapFunction<>(conf, item -> item.f0.toString(), item -> new Tuple2<>(item.f1, item.f0.f1))).returns(Types.TUPLE(Types.STRING, Types.LONG));
 
         return likesCount.coGroup(indirectCommentsCount)
                 .where(item -> item.f0.f1).equalTo(item -> item.f0)
@@ -39,10 +44,12 @@ public class TopUserRatingsQuery {
     }
 
     @SuppressWarnings("Duplicates")
-    public static Tuple3<DataStream<TopUserRatings>, DataStream<TopUserRatings>, DataStream<TopUserRatings>> runAll(DataStream<CommentInfo> inputStream) {
+    public static Tuple3<DataStream<TopUserRatings>, DataStream<TopUserRatings>, DataStream<TopUserRatings>> runAll(FlinkJedisPoolConfig conf, DataStream<CommentInfo> inputStream) {
         Time window24h = Time.hours(24);
         Time window7d = Time.days(7);
         Time window1M = Time.days(30);
+
+        inputStream.addSink(new RedisSink<>(conf, new RedisKeyValueMapper<>(item -> String.valueOf(item.getCommentID()), item -> String.valueOf(item.getUserID()))));
 
         DataStream<Tuple2<Tuple2<Long, String>, Double>> likesCountWindow24hStream = inputStream
                 .filter(item -> item.getDepth() == 1)
@@ -63,10 +70,11 @@ public class TopUserRatingsQuery {
 
         DataStream<Tuple2<String, Long>> indirectCommentsCountWindow24hStream = inputStream
                 .filter(item -> item.getDepth() > 1)
-                .map(CommentInfo::getParentUserDisplayName)
+                .map(CommentInfo::getInReplyTo)
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new CounterAggregateFunction<>());
+                .aggregate(new CounterAggregateFunction<>())
+                .map(new RedisKeyValueMapFunction<>(conf, item -> item.f0.toString(), item -> new Tuple2<>(item.f1, item.f0.f1))).returns(Types.TUPLE(Types.STRING, Types.LONG));
 
         DataStream<Tuple2<String, Long>> indirectCommentsCountWindow7dStream = indirectCommentsCountWindow24hStream
                 .keyBy(s -> s.f0)
