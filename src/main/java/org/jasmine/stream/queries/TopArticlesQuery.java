@@ -12,7 +12,7 @@ import org.jasmine.stream.operators.CounterReduceFunction;
 import org.jasmine.stream.operators.KeyValueTopAggregateFunction;
 import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
 
-public class Top3ArticlesQuery {
+public class TopArticlesQuery {
     @SuppressWarnings("Duplicates")
     public static DataStream<Top3Article> run(DataStream<CommentInfo> inputStream, Time window) {
         return inputStream

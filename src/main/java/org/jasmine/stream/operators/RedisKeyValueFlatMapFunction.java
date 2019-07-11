@@ -2,16 +2,18 @@ package org.jasmine.stream.operators;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.connectors.redis.common.config.FlinkJedisPoolConfig;
+import org.apache.flink.util.Collector;
 import org.apache.flink.util.Preconditions;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.io.IOException;
 
-public class RedisKeyValueMapFunction<I, O> extends RichMapFunction<I, O> {
+public class RedisKeyValueFlatMapFunction<I, O> extends RichFlatMapFunction<I, O> {
 
     private MapFunction<I, String> keyFunction;
     private MapFunction<Tuple2<I, String>, O> mapFunction;
@@ -19,7 +21,7 @@ public class RedisKeyValueMapFunction<I, O> extends RichMapFunction<I, O> {
     private FlinkJedisPoolConfig flinkJedisPoolConfig;
     private JedisPool jedisPool;
 
-    public RedisKeyValueMapFunction(FlinkJedisPoolConfig flinkJedisPoolConfig, MapFunction<I, String> keyFunction, MapFunction<Tuple2<I, String>, O> mapFunction) {
+    public RedisKeyValueFlatMapFunction(FlinkJedisPoolConfig flinkJedisPoolConfig, MapFunction<I, String> keyFunction, MapFunction<Tuple2<I, String>, O> mapFunction) {
         Preconditions.checkNotNull(flinkJedisPoolConfig, "Redis connection pool config should not be null");
         this.flinkJedisPoolConfig = flinkJedisPoolConfig;
 
@@ -37,7 +39,7 @@ public class RedisKeyValueMapFunction<I, O> extends RichMapFunction<I, O> {
     }
 
     public void open(Configuration parameters) throws Exception {
-        this.jedisPool = RedisKeyValueMapFunction.build(this.flinkJedisPoolConfig);
+        this.jedisPool = RedisKeyValueFlatMapFunction.build(this.flinkJedisPoolConfig);
     }
 
     public void close() throws IOException {
@@ -45,12 +47,17 @@ public class RedisKeyValueMapFunction<I, O> extends RichMapFunction<I, O> {
             this.jedisPool.close();
     }
 
-    @Override
-    public O map(I element) throws Exception {
-        return this.mapFunction.map(new Tuple2<>(element, this.getValueFromRedis(this.keyFunction.map(element))));
+    private String getValueFromRedis(String key) {
+        Jedis client = this.jedisPool.getResource();
+        String result = client.get(key);
+        client.close();
+        return result;
     }
 
-    private String getValueFromRedis(String key) {
-        return this.jedisPool.getResource().get(key);
+    @Override
+    public void flatMap(I i, Collector<O> collector) throws Exception {
+        String value = this.getValueFromRedis(this.keyFunction.map(i));
+        if (value != null)
+            collector.collect(this.mapFunction.map(new Tuple2<>(i, value)));
     }
 }

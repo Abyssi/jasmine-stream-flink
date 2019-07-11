@@ -25,22 +25,17 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
-import org.apache.flink.streaming.connectors.redis.common.config.FlinkJedisPoolConfig;
 import org.jasmine.stream.config.Configuration;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
-import org.jasmine.stream.models.Top3Article;
-import org.jasmine.stream.models.TopUserRatings;
 import org.jasmine.stream.queries.CommentsCountQuery;
-import org.jasmine.stream.queries.TopArticlesQuery;
-import org.jasmine.stream.queries.TopUserRatingsQuery;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
 
 import java.util.Objects;
 import java.util.Properties;
 
-public class StreamingJob {
+public class CommentsCountJob {
 
     @SuppressWarnings("Duplicates")
     public static void main(String[] args) throws Exception {
@@ -63,32 +58,6 @@ public class StreamingJob {
                     }
                 });
 
-        FlinkJedisPoolConfig jedisPoolConfig = new FlinkJedisPoolConfig.Builder()
-                .setHost(Configuration.getParameters().get("redis-hostname"))
-                .setPort(Integer.valueOf(Configuration.getParameters().get("redis-port")))
-                .build();
-
-        //inputStream.print();
-
-        // Query 1
-        //DataStream<Top3Article> topArticles1h = TopArticlesQuery.run(inputStream, Time.hours(1));
-        //DataStream<Top3Article> topArticles24h = TopArticlesQuery.run(inputStream, Time.hours(24));
-        //DataStream<Top3Article> topArticles7d = TopArticlesQuery.run(inputStream, Time.days(7));
-
-        Tuple3<DataStream<Top3Article>, DataStream<Top3Article>, DataStream<Top3Article>> topArticlesStreams = TopArticlesQuery.runAll(inputStream);
-        DataStream<Top3Article> topArticles1h = topArticlesStreams.f0;
-        DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
-        DataStream<Top3Article> topArticles7d = topArticlesStreams.f2;
-
-        topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
-        topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
-        topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
-
-        topArticles1h.print();
-        topArticles24h.print();
-        topArticles7d.print();
-
-
         // Query 2
         //DataStream<CommentHourlyCount> commentsCount24h = CommentsCountQuery.run(inputStream, Time.hours(24));
         //DataStream<CommentHourlyCount> commentsCount7d = CommentsCountQuery.run(inputStream, Time.days(7));
@@ -106,25 +75,6 @@ public class StreamingJob {
         commentsCount24h.print();
         commentsCount7d.print();
         commentsCount1M.print();
-
-
-        // Query 3
-        //DataStream<Top3Article> topUserRatings24h = TopArticlesQuery.run(jedisPoolConfig, inputStream, Time.hours(1));
-        //DataStream<Top3Article> topUserRatings7d = TopArticlesQuery.run(jedisPoolConfig, inputStream, Time.hours(24));
-        //DataStream<Top3Article> topUserRatings1M = TopArticlesQuery.run(jedisPoolConfig, inputStream, Time.days(7));
-
-        Tuple3<DataStream<TopUserRatings>, DataStream<TopUserRatings>, DataStream<TopUserRatings>> topUserRatingsStreams = TopUserRatingsQuery.runAll(jedisPoolConfig, inputStream);
-        DataStream<TopUserRatings> topUserRatings24h = topUserRatingsStreams.f0;
-        DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
-        DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;
-
-        topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
-
-        topUserRatings24h.print();
-        topUserRatings7d.print();
-        topUserRatings1M.print();
 
         // execute program
         env.execute("JASMINE Stream");
