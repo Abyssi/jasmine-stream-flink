@@ -29,6 +29,7 @@ import org.jasmine.stream.config.Configuration;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.queries.TopArticlesQuery;
+import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
 
@@ -40,8 +41,7 @@ public class TopArticlesJob {
     @SuppressWarnings("Duplicates")
     public static void main(String[] args) throws Exception {
         // set up the streaming execution environment
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        final StreamExecutionEnvironment env = JNStreamExecutionEnvironment.getExecutionEnvironment();
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", Configuration.getParameters().get("kafka-server"));
