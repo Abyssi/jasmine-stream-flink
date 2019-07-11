@@ -42,8 +42,12 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
 
     @SuppressWarnings("unchecked")
     public E[] toSortedArray(Class<E> eClass) {
+        System.out.println(this);
+        return (E[]) Array.newInstance(eClass, this.size());
+        /*
         E[] array = this.toArray((E[]) Array.newInstance(eClass, this.size()));
         Arrays.sort(array, this.comparator().reversed());
         return array;
+        */
     }
 }

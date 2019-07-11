@@ -17,19 +17,16 @@ import org.jasmine.stream.utils.BoundedPriorityQueue;
 public class TopArticlesQuery {
     @SuppressWarnings("Duplicates")
     public static DataStream<Top3Article> run(DataStream<CommentInfo> inputStream, Time window) {
-        AggregateFunction<Tuple2<String, Long>, BoundedPriorityQueue<Tuple2<String, Long>>, BoundedPriorityQueue<Tuple2<String, Long>>> agg = new NullAggregateFunction<>();
-        KeyValueAggregateFunction<Integer, Tuple2<String, Long>, BoundedPriorityQueue<Tuple2<String, Long>>, BoundedPriorityQueue<Tuple2<String, Long>>> abc = new KeyValueAggregateFunction<>(agg);
-        System.out.println(abc.toString());
 
         return inputStream
                 .map(CommentInfo::getArticleID)
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
-                .map(new TaskIdKeyValueMapFunction<>()).returns(TypeInformation.of(new TypeHint<Tuple2<Integer, Tuple2<String, Long>>>(){}))
-                .keyBy(new KeyValueKeySelector<>())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window))
-                .aggregate(abc).returns(TypeInformation.of(new TypeHint<BoundedPriorityQueue<Tuple2<String, Long>>>(){}))
+                .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))
@@ -60,27 +57,27 @@ public class TopArticlesQuery {
 
         DataStream<Top3Article> window1hStream = intermediateWindow1hStream
                 .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new KeyValueKeySelector<>())
+                .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window1h))
-                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(3))).returns(TypeInformation.of(new TypeHint<BoundedPriorityQueue<Tuple2<String, Long>>>(){}))
+                .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window1h))
                 .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>())).map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window24hStream = intermediateWindow24hStream
                 .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new KeyValueKeySelector<>())
+                .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(3))).returns(TypeInformation.of(new TypeHint<BoundedPriorityQueue<Tuple2<String, Long>>>(){}))
+                .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window24h))
                 .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>())).map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window7dStream = intermediateWindow7dStream
                 .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new KeyValueKeySelector<>())
+                .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window7d))
-                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(3))).returns(TypeInformation.of(new TypeHint<BoundedPriorityQueue<Tuple2<String, Long>>>(){}))
+                .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>())).map(item -> new Top3Article(item.getTimestamp(), item.getElement()));

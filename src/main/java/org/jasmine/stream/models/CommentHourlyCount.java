@@ -1,10 +1,11 @@
 package org.jasmine.stream.models;
 
 import org.jasmine.stream.utils.JSONStringable;
+import org.jasmine.stream.utils.Mergeable;
 
 import java.util.HashMap;
 
-public class CommentHourlyCount implements JSONStringable {
+public class CommentHourlyCount implements JSONStringable, Mergeable<CommentHourlyCount> {
     private long ts;
     private double count_h00; //00:00:00 a 01:59:59
     private double count_h02; //02:00:00 a 03:59:59

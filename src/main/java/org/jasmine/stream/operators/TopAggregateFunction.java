@@ -4,14 +4,15 @@ import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
+import org.jasmine.stream.utils.Identified;
 
 import java.util.HashMap;
 
-abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
+abstract public class TopAggregateFunction<E> implements AggregateFunction<Identified.ByInteger<E>, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
 
     @Override
-    public BoundedPriorityQueue<E> add(E e, BoundedPriorityQueue<E> boundedPriorityQueue) {
-        boundedPriorityQueue.add(e);
+    public BoundedPriorityQueue<E> add(Identified.ByInteger<E> e, BoundedPriorityQueue<E> boundedPriorityQueue) {
+        boundedPriorityQueue.add(e.getElement());
         return boundedPriorityQueue;
     }
 
