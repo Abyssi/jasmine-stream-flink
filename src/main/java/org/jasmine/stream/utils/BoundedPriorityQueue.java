@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Serializable {
+public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Serializable, Cloneable {
 
     private int maxItems;
 
@@ -15,15 +15,22 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
         this.maxItems = maxItems;
     }
 
+    public BoundedPriorityQueue(int maxItems, PriorityQueue<E> queue) {
+        super(queue);
+        this.maxItems = maxItems;
+    }
+
     @Override
-    public boolean offer(E e) {
+    public boolean add(E e) {
         if (e == null) return false;
         try {
-            boolean success = super.offer(e);
+            boolean success = this.offer(e);
             if (!success) return false;
-            else if (this.size() > maxItems) this.poll();
+            else if (this.size() > maxItems) //this.poll();
             return true;
         } catch (Exception error) {
+            System.out.println("abc: " +e);
+            System.out.println("abcdef: " +this);
             System.out.println("Error: " + error);
         }
         return false;
@@ -42,12 +49,17 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
 
     @SuppressWarnings("unchecked")
     public E[] toSortedArray(Class<E> eClass) {
-        System.out.println(this);
+        //System.out.println(this);
         return (E[]) Array.newInstance(eClass, this.size());
         /*
         E[] array = this.toArray((E[]) Array.newInstance(eClass, this.size()));
         Arrays.sort(array, this.comparator().reversed());
         return array;
         */
+    }
+
+    @Override
+    public BoundedPriorityQueue<E> clone() {
+        return new BoundedPriorityQueue<>(this.maxItems, this);
     }
 }

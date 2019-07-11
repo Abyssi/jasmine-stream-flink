@@ -18,7 +18,8 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<Ident
 
     @Override
     public BoundedPriorityQueue<E> getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
-        return boundedPriorityQueue;
+        System.out.println("FIRING: " + boundedPriorityQueue.clone());
+        return boundedPriorityQueue.clone();
     }
 
     @Override

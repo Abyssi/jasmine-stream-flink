@@ -27,6 +27,7 @@ public class TopArticlesQuery {
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
+                .map(new PeekMapFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))

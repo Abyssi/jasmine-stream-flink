@@ -1,5 +1,7 @@
 package org.jasmine.stream.queries;
 
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
@@ -54,7 +56,7 @@ public class CommentsCountQuery {
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window7d))
-                .aggregate(new IdentifiedMergeableAggregateFunction<>())
+                .aggregate(new IdentifiedCommentHourlyCountAggregateFunction())
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .reduce(CommentHourlyCount::merge);
 
@@ -62,10 +64,13 @@ public class CommentsCountQuery {
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window1M))
-                .aggregate(new IdentifiedMergeableAggregateFunction<>())
+                .aggregate(new IdentifiedCommentHourlyCountAggregateFunction())
                 .windowAll(TumblingEventTimeWindows.of(window1M))
                 .reduce(CommentHourlyCount::merge);
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
+    }
+
+    private static class IdentifiedCommentHourlyCountAggregateFunction extends IdentifiedMergeableAggregateFunction<CommentHourlyCount> {
     }
 }
