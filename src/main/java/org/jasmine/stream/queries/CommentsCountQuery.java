@@ -7,9 +7,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.CommentType;
-import org.jasmine.stream.operators.CollectorAggregateFunction;
-import org.jasmine.stream.operators.CounterAggregateFunction;
-import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
+import org.jasmine.stream.operators.*;
 import org.jasmine.stream.utils.DateUtils;
 
 import java.util.Calendar;
@@ -23,8 +21,12 @@ public class CommentsCountQuery {
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window))
+                .aggregate(new KeyValueAggregateFunction<>(new CollectorAggregateFunction<>()))
                 .windowAll(TumblingEventTimeWindows.of(window))
-                .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .reduce(new CollectorAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
     }
 
@@ -40,15 +42,29 @@ public class CommentsCountQuery {
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new CounterAggregateFunction<>())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window24h))
+                .aggregate(new KeyValueAggregateFunction<>(new CollectorAggregateFunction<>()))
                 .windowAll(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .reduce(new CollectorAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
 
         DataStream<CommentHourlyCount> window7dStream = window24hStream
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window7d))
+                .reduce(new KeyValueReduceFunction<>(CommentHourlyCount::merge))
+                .map(new KeyValueValueMapFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .reduce(CommentHourlyCount::merge);
 
         DataStream<CommentHourlyCount> window1MStream = window7dStream
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window1M))
+                .reduce(new KeyValueReduceFunction<>(CommentHourlyCount::merge))
+                .map(new KeyValueValueMapFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window1M))
                 .reduce(CommentHourlyCount::merge);
 

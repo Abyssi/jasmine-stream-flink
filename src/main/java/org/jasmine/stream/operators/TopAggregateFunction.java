@@ -1,9 +1,13 @@
 package org.jasmine.stream.operators;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
 
-abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, E[]> {
+import java.util.HashMap;
+
+abstract public class TopAggregateFunction<E> implements AggregateFunction<E, BoundedPriorityQueue<E>, BoundedPriorityQueue<E>> {
 
     @Override
     public BoundedPriorityQueue<E> add(E e, BoundedPriorityQueue<E> boundedPriorityQueue) {
@@ -12,8 +16,8 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<E, Bo
     }
 
     @Override
-    public E[] getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
-        return boundedPriorityQueue.toSortedArray(this.getElementClass());
+    public BoundedPriorityQueue<E> getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
+        return boundedPriorityQueue;
     }
 
     @Override
@@ -22,5 +26,12 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<E, Bo
         return acc1;
     }
 
-    public abstract Class<E> getElementClass();
+    public static class Merge<E> implements ReduceFunction<BoundedPriorityQueue<E>> {
+        @Override
+        public BoundedPriorityQueue<E> reduce(BoundedPriorityQueue<E> es, BoundedPriorityQueue<E> t1) throws Exception {
+            t1.merge(es);
+            return t1;
+        }
+    }
+
 }

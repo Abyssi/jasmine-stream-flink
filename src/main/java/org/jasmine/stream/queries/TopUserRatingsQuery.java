@@ -38,8 +38,13 @@ public class TopUserRatingsQuery {
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window))
+                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(10)))
                 .windowAll(TumblingEventTimeWindows.of(window))
-                .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
+                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
     }
 
@@ -90,24 +95,39 @@ public class TopUserRatingsQuery {
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window24h))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window24h))
+                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(10)))
                 .windowAll(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
+                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
         DataStream<TopUserRatings> window7dStream = likesCountWindow7dStream.coGroup(indirectCommentsCountWindow7dStream)
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window7d))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window7d))
+                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(10)))
                 .windowAll(TumblingEventTimeWindows.of(window7d))
-                .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
+                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
         DataStream<TopUserRatings> window1MStream = likesCountWindow1MStream.coGroup(indirectCommentsCountWindow1MStream)
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window1M))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(new TaskIdKeyValueMapFunction<>())
+                .keyBy(new KeyValueKeySelector<>())
+                .window(TumblingEventTimeWindows.of(window1M))
+                .aggregate(new KeyValueAggregateFunction<>(new KeyValueTopAggregateFunction<>(10)))
                 .windowAll(TumblingEventTimeWindows.of(window1M))
-                .aggregate(new KeyValueTopAggregateFunction<>(10), new TimestampEnrichProcessAllWindowFunction<>())
+                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);

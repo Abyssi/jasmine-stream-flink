@@ -1,6 +1,7 @@
 package org.jasmine.stream.operators;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 
 import java.util.HashMap;
@@ -26,5 +27,13 @@ public class CollectorAggregateFunction<K, V> implements AggregateFunction<Tuple
     public HashMap<K, V> merge(HashMap<K, V> kvHashMap, HashMap<K, V> acc1) {
         acc1.putAll(kvHashMap);
         return acc1;
+    }
+
+    public static class Merge<K, V> implements ReduceFunction<HashMap<K, V>> {
+        @Override
+        public HashMap<K, V> reduce(HashMap<K, V> kvHashMap, HashMap<K, V> t1) throws Exception {
+            t1.putAll(kvHashMap);
+            return t1;
+        }
     }
 }
