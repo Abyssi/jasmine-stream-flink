@@ -11,7 +11,6 @@ import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.*;
 import org.jasmine.stream.utils.KeyValue;
-import org.jasmine.stream.utils.LatencyTracker;
 
 public class TopArticlesQuery {
     @SuppressWarnings("Duplicates")
@@ -38,9 +37,7 @@ public class TopArticlesQuery {
         Time window24h = Time.hours(24);
         Time window7d = Time.days(7);
 
-        LatencyTracker lt = new LatencyTracker();
-
-        DataStream<Tuple2<String, Long>> intermediateWindow1hStream = lt.trackStart(inputStream)
+        DataStream<Tuple2<String, Long>> intermediateWindow1hStream = inputStream
                 .map(CommentInfo::getArticleID)
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window1h))
@@ -56,7 +53,7 @@ public class TopArticlesQuery {
                 .window(TumblingEventTimeWindows.of(window7d))
                 .reduce(new CounterReduceFunction<>());
 
-        DataStream<Top3Article> window1hStream = lt.trackEnd(intermediateWindow1hStream
+        DataStream<Top3Article> window1hStream = intermediateWindow1hStream
                 .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<String, Long>>() {
                 }))
                 .map(new TaskIdKeyValueMapFunction<>())
@@ -65,9 +62,7 @@ public class TopArticlesQuery {
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window1h))
                 .aggregate(new StringLongKeyValueTopAggregateFunction(3), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
-                .map(item -> new Top3Article(item.getTimestamp(), item.getElement())));
-
-        lt.getEndStream().print();
+                .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window24hStream = intermediateWindow24hStream
                 .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<String, Long>>() {

@@ -32,6 +32,7 @@ import org.jasmine.stream.queries.TopArticlesQuery;
 import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
+import org.jasmine.stream.utils.LatencyTracker;
 
 import java.io.File;
 import java.util.Objects;
@@ -71,17 +72,28 @@ public class TopArticlesJob {
         DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
         DataStream<Top3Article> topArticles7d = topArticlesStreams.f2;
 
-        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
-        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
-        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
+        LatencyTracker lt = new LatencyTracker();
+        lt.trackStart(inputStream);
+        lt.trackEnd(topArticles1h);
+        lt.getEndStream().print();
+
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
+            topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
+            topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
+            topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
 
         if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topArticles1h.print();
         if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topArticles24h.print();
         if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topArticles7d.print();
 
-        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topArticles1h.writeAsText("output/topArticles1h.json").setParallelism(1);
-        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topArticles24h.writeAsText("output/topArticles24h.json").setParallelism(1);
-        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topArticles7d.writeAsText("output/topArticles7d.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled"))
+            topArticles1h.writeAsText("output/topArticles1h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled"))
+            topArticles24h.writeAsText("output/topArticles24h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled"))
+            topArticles7d.writeAsText("output/topArticles7d.json").setParallelism(1);
 
         // execute program
         env.execute("JASMINE Stream");
