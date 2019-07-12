@@ -5,24 +5,24 @@ import org.jasmine.stream.utils.JSONStringable;
 
 public class Top3Article implements JSONStringable {
     private long ts;
-    private String artID1;
-    private long nCmnt1;
-    private String artID2;
-    private long nCmnt2;
-    private String artID3;
-    private long nCmnt3;
+    private String artID_1;
+    private long nCmnt_1;
+    private String artID_2;
+    private long nCmnt_2;
+    private String artID_3;
+    private long nCmnt_3;
 
     public Top3Article() {
     }
 
-    public Top3Article(long ts, String artID1, long nCmnt1, String artID2, long nCmnt2, String artID3, long nCmnt3) {
+    public Top3Article(long ts, String artID_1, long nCmnt_1, String artID_2, long nCmnt_2, String artID_3, long nCmnt_3) {
         this.ts = ts;
-        this.artID1 = artID1;
-        this.nCmnt1 = nCmnt1;
-        this.artID2 = artID2;
-        this.nCmnt2 = nCmnt2;
-        this.artID3 = artID3;
-        this.nCmnt3 = nCmnt3;
+        this.artID_1 = artID_1;
+        this.nCmnt_1 = nCmnt_1;
+        this.artID_2 = artID_2;
+        this.nCmnt_2 = nCmnt_2;
+        this.artID_3 = artID_3;
+        this.nCmnt_3 = nCmnt_3;
     }
 
     public Top3Article(long timestamp, Tuple2<String, Long>[] array) {
@@ -37,52 +37,52 @@ public class Top3Article implements JSONStringable {
         this.ts = ts;
     }
 
-    public String getArtID1() {
-        return artID1;
+    public String getArtID_1() {
+        return artID_1;
     }
 
-    public void setArtID1(String artID1) {
-        this.artID1 = artID1;
+    public void setArtID_1(String artID_1) {
+        this.artID_1 = artID_1;
     }
 
-    public long getnCmnt1() {
-        return nCmnt1;
+    public long getnCmnt_1() {
+        return nCmnt_1;
     }
 
-    public void setnCmnt1(long nCmnt1) {
-        this.nCmnt1 = nCmnt1;
+    public void setnCmnt_1(long nCmnt_1) {
+        this.nCmnt_1 = nCmnt_1;
     }
 
-    public String getArtID2() {
-        return artID2;
+    public String getArtID_2() {
+        return artID_2;
     }
 
-    public void setArtID2(String artID2) {
-        this.artID2 = artID2;
+    public void setArtID_2(String artID_2) {
+        this.artID_2 = artID_2;
     }
 
-    public long getnCmnt2() {
-        return nCmnt2;
+    public long getnCmnt_2() {
+        return nCmnt_2;
     }
 
-    public void setnCmnt2(long nCmnt2) {
-        this.nCmnt2 = nCmnt2;
+    public void setnCmnt_2(long nCmnt_2) {
+        this.nCmnt_2 = nCmnt_2;
     }
 
-    public String getArtID3() {
-        return artID3;
+    public String getArtID_3() {
+        return artID_3;
     }
 
-    public void setArtID3(String artID3) {
-        this.artID3 = artID3;
+    public void setArtID_3(String artID_3) {
+        this.artID_3 = artID_3;
     }
 
-    public long getnCmnt3() {
-        return nCmnt3;
+    public long getnCmnt_3() {
+        return nCmnt_3;
     }
 
-    public void setnCmnt3(long nCmnt3) {
-        this.nCmnt3 = nCmnt3;
+    public void setnCmnt_3(long nCmnt_3) {
+        this.nCmnt_3 = nCmnt_3;
     }
 
     @Override
