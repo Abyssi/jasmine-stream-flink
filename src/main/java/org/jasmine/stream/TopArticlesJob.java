@@ -18,17 +18,20 @@
 
 package org.jasmine.stream;
 
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.jasmine.stream.config.Configuration;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.queries.TopArticlesQuery;
 import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
+import org.jasmine.stream.utils.JSONClassSerializationSchema;
 
 import java.util.Objects;
 import java.util.Properties;
@@ -56,10 +59,10 @@ public class TopArticlesJob {
                 });
 
         // Query 1
-        DataStream<Top3Article> topArticles1h = TopArticlesQuery.run(inputStream, Time.hours(1));
+        //DataStream<Top3Article> topArticles1h = TopArticlesQuery.run(inputStream, Time.hours(1));
         //DataStream<Top3Article> topArticles24h = TopArticlesQuery.run(inputStream, Time.hours(24));
         //DataStream<Top3Article> topArticles7d = TopArticlesQuery.run(inputStream, Time.days(7));
-/*
+
         Tuple3<DataStream<Top3Article>, DataStream<Top3Article>, DataStream<Top3Article>> topArticlesStreams = TopArticlesQuery.runAll(inputStream);
         DataStream<Top3Article> topArticles1h = topArticlesStreams.f0;
         DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
@@ -72,8 +75,6 @@ public class TopArticlesJob {
         topArticles1h.print();
         topArticles24h.print();
         topArticles7d.print();
-        */
-        topArticles1h.print();
 
         // execute program
         env.execute("JASMINE Stream");
