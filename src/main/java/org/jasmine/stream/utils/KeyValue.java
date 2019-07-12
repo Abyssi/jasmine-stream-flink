@@ -2,11 +2,16 @@ package org.jasmine.stream.utils;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 
-public class KeyValue<K, V extends Comparable<V>> extends Tuple2<K, V> implements Comparable<KeyValue<K, V>> {
+import java.io.Serializable;
+
+public class KeyValue<K, V extends Comparable<V>> extends Tuple2<K, V> implements Comparable<KeyValue<K, V>>, Serializable {
+
+    public KeyValue() {
+        super();
+    }
 
     public KeyValue(Tuple2<K, V> tuple2) {
-        this.f0 = tuple2.f0;
-        this.f1 = tuple2.f1;
+        super(tuple2.f0, tuple2.f1);
     }
 
     @Override

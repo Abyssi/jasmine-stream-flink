@@ -1,9 +1,7 @@
 package org.jasmine.stream.queries;
 
-import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -12,26 +10,24 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.*;
-import org.jasmine.stream.utils.BoundedPriorityQueue;
 import org.jasmine.stream.utils.KeyValue;
 
 public class TopArticlesQuery {
     @SuppressWarnings("Duplicates")
     public static DataStream<Top3Article> run(DataStream<CommentInfo> inputStream, Time window) {
-
         return inputStream
                 .map(CommentInfo::getArticleID)
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
-                //.map(KeyValue::new)
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<String, Long>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .aggregate(new StringLongKeyValueTopAggregateFunction(3), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(new PeekMapFunction<>())
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
     }
 
@@ -58,6 +54,8 @@ public class TopArticlesQuery {
                 .reduce(new CounterReduceFunction<>());
 
         DataStream<Top3Article> window1hStream = intermediateWindow1hStream
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<String, Long>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window1h))
@@ -67,6 +65,8 @@ public class TopArticlesQuery {
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window24hStream = intermediateWindow24hStream
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<String, Long>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window24h))
@@ -76,6 +76,8 @@ public class TopArticlesQuery {
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window7dStream = intermediateWindow7dStream
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<String, Long>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window7d))

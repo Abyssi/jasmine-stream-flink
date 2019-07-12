@@ -1,6 +1,8 @@
 package org.jasmine.stream.queries;
 
 import org.apache.flink.api.common.functions.CoGroupFunction;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -13,6 +15,7 @@ import org.apache.flink.util.Collector;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.TopUserRatings;
 import org.jasmine.stream.operators.*;
+import org.jasmine.stream.utils.KeyValue;
 
 public class TopUserRatingsQuery {
     @SuppressWarnings("Duplicates")
@@ -38,6 +41,8 @@ public class TopUserRatingsQuery {
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<Long, Double>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window))
@@ -94,6 +99,8 @@ public class TopUserRatingsQuery {
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window24h))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<Long, Double>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window24h))
@@ -106,6 +113,8 @@ public class TopUserRatingsQuery {
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window7d))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<Long, Double>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window7d))
@@ -118,6 +127,8 @@ public class TopUserRatingsQuery {
                 .where(item -> item.f0).equalTo(item -> item.f0)
                 .window(TumblingEventTimeWindows.of(window1M))
                 .apply(new LikesAndCommentsCoGroupFunction())
+                .map(KeyValue::new).returns(TypeInformation.of(new TypeHint<KeyValue<Long, Double>>() {
+                }))
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window1M))

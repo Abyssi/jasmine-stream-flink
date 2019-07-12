@@ -1,7 +1,5 @@
 package org.jasmine.stream.utils;
 
-import scala.Int;
-
 import java.io.Serializable;
 
 public class Identified<ID, E> implements Serializable, JSONStringable {
