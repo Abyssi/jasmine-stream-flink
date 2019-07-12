@@ -48,7 +48,7 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new KeyValueTopAggregateFunction<>(10))
                 .windowAll(TumblingEventTimeWindows.of(window))
-                .aggregate(new KeyValueTopAggregateFunction.Merge<>(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .aggregate(new LongDoubleKeyValueTopAggregateFunction(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
     }
 
@@ -106,7 +106,7 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new KeyValueTopAggregateFunction<>(10))
                 .windowAll(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new KeyValueTopAggregateFunction.Merge<>(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .aggregate(new LongDoubleKeyValueTopAggregateFunction(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
         DataStream<TopUserRatings> window7dStream = likesCountWindow7dStream.coGroup(indirectCommentsCountWindow7dStream)
@@ -120,7 +120,7 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window7d))
                 .aggregate(new KeyValueTopAggregateFunction<>(10))
                 .windowAll(TumblingEventTimeWindows.of(window7d))
-                .aggregate(new KeyValueTopAggregateFunction.Merge<>(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .aggregate(new LongDoubleKeyValueTopAggregateFunction(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
         DataStream<TopUserRatings> window1MStream = likesCountWindow1MStream.coGroup(indirectCommentsCountWindow1MStream)
@@ -134,7 +134,7 @@ public class TopUserRatingsQuery {
                 .window(TumblingEventTimeWindows.of(window1M))
                 .aggregate(new KeyValueTopAggregateFunction<>(10))
                 .windowAll(TumblingEventTimeWindows.of(window1M))
-                .aggregate(new KeyValueTopAggregateFunction.Merge<>(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .aggregate(new LongDoubleKeyValueTopAggregateFunction(10), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
                 .map(item -> new TopUserRatings(item.getTimestamp(), item.getElement()));
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
@@ -149,6 +149,12 @@ public class TopUserRatingsQuery {
             double likesCount = likesCountTuple != null ? likesCountTuple.f1 : 0d;
             double indirectCommentsCount = indirectCommentsCountTuple != null ? indirectCommentsCountTuple.f1 : 0d;
             collector.collect(new Tuple2<>(userID, (.3 * likesCount + .7 * indirectCommentsCount)));
+        }
+    }
+
+    private static class LongDoubleKeyValueTopAggregateFunction extends KeyValueTopAggregateFunction.Merge<Long, Double> {
+        public LongDoubleKeyValueTopAggregateFunction(int maxItems) {
+            super(maxItems);
         }
     }
 }
