@@ -24,7 +24,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
-import org.jasmine.stream.config.Configuration;
+import org.jasmine.stream.config.FlinkConfiguration;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.queries.CommentsCountQuery;
@@ -43,12 +43,12 @@ public class CommentsCountJob {
         final StreamExecutionEnvironment env = JNStreamExecutionEnvironment.getExecutionEnvironment();
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", Configuration.getParameters().get("kafka-server"));
-        properties.setProperty("group.id", Configuration.getParameters().get("kafka-group-id"));
+        properties.setProperty("bootstrap.servers", FlinkConfiguration.getParameters().get("kafka-server"));
+        properties.setProperty("group.id", FlinkConfiguration.getParameters().get("kafka-group-id"));
         properties.setProperty("auto.offset.reset", "latest");
 
         DataStream<CommentInfo> inputStream = env
-                .addSource(new FlinkKafkaConsumer<>(Configuration.getParameters().get("kafka-input-topic"), new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
+                .addSource(new FlinkKafkaConsumer<>(FlinkConfiguration.getParameters().get("kafka-input-topic"), new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
                 .filter(Objects::nonNull)
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
                     @Override
@@ -67,9 +67,9 @@ public class CommentsCountJob {
         DataStream<CommentHourlyCount> commentsCount7d = commentsCountStreams.f1;
         DataStream<CommentHourlyCount> commentsCount1M = commentsCountStreams.f2;
 
-        commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
-        commentsCount7d.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "commentsCount7d"), new JSONClassSerializationSchema<>(), properties));
-        commentsCount1M.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "commentsCount1M"), new JSONClassSerializationSchema<>(), properties));
+        commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
+        commentsCount7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount7d"), new JSONClassSerializationSchema<>(), properties));
+        commentsCount1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount1M"), new JSONClassSerializationSchema<>(), properties));
 
         commentsCount24h.print();
         commentsCount7d.print();

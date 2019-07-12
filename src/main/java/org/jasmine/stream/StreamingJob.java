@@ -25,7 +25,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.streaming.connectors.redis.common.config.FlinkJedisPoolConfig;
-import org.jasmine.stream.config.Configuration;
+import org.jasmine.stream.config.FlinkConfiguration;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
@@ -48,12 +48,12 @@ public class StreamingJob {
         final StreamExecutionEnvironment env = JNStreamExecutionEnvironment.getExecutionEnvironment();
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", Configuration.getParameters().get("kafka-server"));
-        properties.setProperty("group.id", Configuration.getParameters().get("kafka-group-id"));
+        properties.setProperty("bootstrap.servers", FlinkConfiguration.getParameters().get("kafka-server"));
+        properties.setProperty("group.id", FlinkConfiguration.getParameters().get("kafka-group-id"));
         properties.setProperty("auto.offset.reset", "latest");
 
         DataStream<CommentInfo> inputStream = env
-                .addSource(new FlinkKafkaConsumer<>(Configuration.getParameters().get("kafka-input-topic"), new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
+                .addSource(new FlinkKafkaConsumer<>(FlinkConfiguration.getParameters().get("kafka-input-topic"), new JSONClassDeserializationSchema<>(CommentInfo.class), properties))
                 .filter(Objects::nonNull)
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<CommentInfo>() {
                     @Override
@@ -63,8 +63,8 @@ public class StreamingJob {
                 });
 
         FlinkJedisPoolConfig jedisPoolConfig = new FlinkJedisPoolConfig.Builder()
-                .setHost(Configuration.getParameters().get("redis-hostname"))
-                .setPort(Integer.valueOf(Configuration.getParameters().get("redis-port")))
+                .setHost(FlinkConfiguration.getParameters().get("redis-hostname"))
+                .setPort(Integer.valueOf(FlinkConfiguration.getParameters().get("redis-port")))
                 .build();
 
         //inputStream.print();
@@ -79,9 +79,9 @@ public class StreamingJob {
         DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
         DataStream<Top3Article> topArticles7d = topArticlesStreams.f2;
 
-        topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
-        topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
-        topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
+        topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
+        topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
+        topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
 
         topArticles1h.print();
         topArticles24h.print();
@@ -98,9 +98,9 @@ public class StreamingJob {
         DataStream<CommentHourlyCount> commentsCount7d = commentsCountStreams.f1;
         DataStream<CommentHourlyCount> commentsCount1M = commentsCountStreams.f2;
 
-        commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
-        commentsCount7d.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "commentsCount7d"), new JSONClassSerializationSchema<>(), properties));
-        commentsCount1M.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "commentsCount1M"), new JSONClassSerializationSchema<>(), properties));
+        commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
+        commentsCount7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount7d"), new JSONClassSerializationSchema<>(), properties));
+        commentsCount1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount1M"), new JSONClassSerializationSchema<>(), properties));
 
         commentsCount24h.print();
         commentsCount7d.print();
@@ -117,9 +117,9 @@ public class StreamingJob {
         DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
         DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;
 
-        topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(Configuration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
+        topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
+        topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
+        topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
 
         topUserRatings24h.print();
         topUserRatings7d.print();

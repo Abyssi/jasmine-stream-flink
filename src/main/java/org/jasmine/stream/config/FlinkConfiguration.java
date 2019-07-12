@@ -5,17 +5,17 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class Configuration {
+public class FlinkConfiguration {
     private final static String PROPERTIES_FILENAME = "application.properties";
-    private static Configuration instance;
+    private static FlinkConfiguration instance;
     private ParameterTool parameterTool;
 
-    private Configuration() {
+    private FlinkConfiguration() {
         this.parameterTool = initializeParams();
     }
 
-    private static Configuration getInstance() {
-        return (instance == null ? (instance = new Configuration()) : instance);
+    private static FlinkConfiguration getInstance() {
+        return (instance == null ? (instance = new FlinkConfiguration()) : instance);
     }
 
     public static ParameterTool getParameters() {
