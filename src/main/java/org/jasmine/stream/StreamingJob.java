@@ -18,6 +18,7 @@
 
 package org.jasmine.stream;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -37,6 +38,7 @@ import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
 
+import java.io.File;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -69,6 +71,8 @@ public class StreamingJob {
 
         //inputStream.print();
 
+        FileUtils.deleteDirectory(new File("output"));
+
         // Query 1
         //DataStream<Top3Article> topArticles1h = TopArticlesQuery.run(inputStream, Time.hours(1));
         //DataStream<Top3Article> topArticles24h = TopArticlesQuery.run(inputStream, Time.hours(24));
@@ -79,14 +83,17 @@ public class StreamingJob {
         DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
         DataStream<Top3Article> topArticles7d = topArticlesStreams.f2;
 
-        topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
-        topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
-        topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topArticles24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles24h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topArticles7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles7d"), new JSONClassSerializationSchema<>(), properties));
 
-        topArticles1h.print();
-        topArticles24h.print();
-        topArticles7d.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topArticles1h.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topArticles24h.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topArticles7d.print();
 
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topArticles1h.writeAsText("output/topArticles1h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topArticles24h.writeAsText("output/topArticles24h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topArticles7d.writeAsText("output/topArticles7d.json").setParallelism(1);
 
         // Query 2
         //DataStream<CommentHourlyCount> commentsCount24h = CommentsCountQuery.run(inputStream, Time.hours(24));
@@ -98,14 +105,17 @@ public class StreamingJob {
         DataStream<CommentHourlyCount> commentsCount7d = commentsCountStreams.f1;
         DataStream<CommentHourlyCount> commentsCount1M = commentsCountStreams.f2;
 
-        commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
-        commentsCount7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount7d"), new JSONClassSerializationSchema<>(), properties));
-        commentsCount1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount1M"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) commentsCount7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount7d"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) commentsCount1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount1M"), new JSONClassSerializationSchema<>(), properties));
 
-        commentsCount24h.print();
-        commentsCount7d.print();
-        commentsCount1M.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) commentsCount24h.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) commentsCount7d.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) commentsCount1M.print();
 
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) commentsCount24h.writeAsText("output/commentsCount24h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) commentsCount7d.writeAsText("output/commentsCount7d.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) commentsCount1M.writeAsText("output/commentsCount1M.json").setParallelism(1);
 
         // Query 3
         //DataStream<Top3Article> topUserRatings24h = TopArticlesQuery.run(jedisPoolConfig, inputStream, Time.hours(1));
@@ -117,13 +127,17 @@ public class StreamingJob {
         DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
         DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;
 
-        topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
 
-        topUserRatings24h.print();
-        topUserRatings7d.print();
-        topUserRatings1M.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topUserRatings24h.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topUserRatings7d.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topUserRatings1M.print();
+
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topUserRatings24h.writeAsText("output/topUserRatings24h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topUserRatings7d.writeAsText("output/topUserRatings7d.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topUserRatings1M.writeAsText("output/topUserRatings1M.json").setParallelism(1);
 
         // execute program
         env.execute("JASMINE Stream");

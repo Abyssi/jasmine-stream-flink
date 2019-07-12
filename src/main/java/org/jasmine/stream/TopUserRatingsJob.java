@@ -18,6 +18,7 @@
 
 package org.jasmine.stream;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -33,6 +34,7 @@ import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
 
+import java.io.File;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -63,6 +65,8 @@ public class TopUserRatingsJob {
                 .setPort(Integer.valueOf(FlinkConfiguration.getParameters().get("redis-port")))
                 .build();
 
+        FileUtils.deleteDirectory(new File("output"));
+
         // Query 3
         //DataStream<TopUserRatings> topUserRatings24h = TopUserRatingsQuery.run(jedisPoolConfig, inputStream, Time.hours(24));
         //DataStream<TopUserRatings> topUserRatings7d = TopUserRatingsQuery.run(jedisPoolConfig, inputStream, Time.hours(24));
@@ -73,13 +77,17 @@ public class TopUserRatingsJob {
         DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
         DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;
 
-        topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
-        topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topUserRatings7d.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings7d"), new JSONClassSerializationSchema<>(), properties));
+        if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled")) topUserRatings1M.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings1M"), new JSONClassSerializationSchema<>(), properties));
 
-        topUserRatings24h.print();
-        topUserRatings7d.print();
-        topUserRatings1M.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topUserRatings24h.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topUserRatings7d.print();
+        if (FlinkConfiguration.getParameters().getBoolean("print-enabled")) topUserRatings1M.print();
+
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topUserRatings24h.writeAsText("output/topUserRatings24h.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topUserRatings7d.writeAsText("output/topUserRatings7d.json").setParallelism(1);
+        if (FlinkConfiguration.getParameters().getBoolean("write-enabled")) topUserRatings1M.writeAsText("output/topUserRatings1M.json").setParallelism(1);
 
         // execute program
         env.execute("JASMINE Stream");
