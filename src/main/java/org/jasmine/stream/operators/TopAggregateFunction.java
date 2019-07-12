@@ -18,8 +18,7 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<Ident
 
     @Override
     public BoundedPriorityQueue<E> getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
-        System.out.println("FIRING: " + boundedPriorityQueue.clone());
-        return boundedPriorityQueue.clone();
+        return boundedPriorityQueue;
     }
 
     @Override
@@ -28,12 +27,24 @@ abstract public class TopAggregateFunction<E> implements AggregateFunction<Ident
         return acc1;
     }
 
-    public static class Merge<E> implements ReduceFunction<BoundedPriorityQueue<E>> {
+    public abstract static class Merge<E> implements AggregateFunction<BoundedPriorityQueue<E>, BoundedPriorityQueue<E>, E[]> {
+
         @Override
-        public BoundedPriorityQueue<E> reduce(BoundedPriorityQueue<E> es, BoundedPriorityQueue<E> t1) throws Exception {
-            t1.merge(es);
-            return t1;
+        public BoundedPriorityQueue<E> add(BoundedPriorityQueue<E> es, BoundedPriorityQueue<E> boundedPriorityQueue) {
+            return boundedPriorityQueue.merge(es);
         }
+
+        @Override
+        public E[] getResult(BoundedPriorityQueue<E> boundedPriorityQueue) {
+            return boundedPriorityQueue.toSortedArray(this.getElementClass());
+        }
+
+        @Override
+        public BoundedPriorityQueue<E> merge(BoundedPriorityQueue<E> boundedPriorityQueue, BoundedPriorityQueue<E> acc1) {
+            return acc1.merge(boundedPriorityQueue);
+        }
+
+        public abstract Class<E> getElementClass();
     }
 
 }

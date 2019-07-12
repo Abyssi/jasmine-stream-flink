@@ -13,6 +13,7 @@ import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.Top3Article;
 import org.jasmine.stream.operators.*;
 import org.jasmine.stream.utils.BoundedPriorityQueue;
+import org.jasmine.stream.utils.KeyValue;
 
 public class TopArticlesQuery {
     @SuppressWarnings("Duplicates")
@@ -23,14 +24,14 @@ public class TopArticlesQuery {
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
+                //.map(KeyValue::new)
                 .map(new TaskIdKeyValueMapFunction<>())
                 .keyBy(new IdentifiedIdKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
-                .map(new PeekMapFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window))
-                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>()))
+                .aggregate(new StringLongKeyValueTopAggregateFunction(3), new TimestampEnrichProcessAllWindowFunction<>())
+                .map(new PeekMapFunction<>())
                 .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
     }
 
@@ -62,8 +63,8 @@ public class TopArticlesQuery {
                 .window(TumblingEventTimeWindows.of(window1h))
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window1h))
-                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>())).map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
+                .aggregate(new StringLongKeyValueTopAggregateFunction(3), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window24hStream = intermediateWindow24hStream
                 .map(new TaskIdKeyValueMapFunction<>())
@@ -71,8 +72,8 @@ public class TopArticlesQuery {
                 .window(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window24h))
-                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>())).map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
+                .aggregate(new StringLongKeyValueTopAggregateFunction(3), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         DataStream<Top3Article> window7dStream = intermediateWindow7dStream
                 .map(new TaskIdKeyValueMapFunction<>())
@@ -80,9 +81,16 @@ public class TopArticlesQuery {
                 .window(TumblingEventTimeWindows.of(window7d))
                 .aggregate(new KeyValueTopAggregateFunction<>(3))
                 .windowAll(TumblingEventTimeWindows.of(window7d))
-                .reduce(new KeyValueTopAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
-                .map(new TimestampedMapFunction<>(new KeyValueTopAggregateFunction.MapToArray<>())).map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
+                .aggregate(new StringLongKeyValueTopAggregateFunction(3), new TimestampEnrichProcessAllWindowFunction<>()).setParallelism(1)
+                .map(item -> new Top3Article(item.getTimestamp(), item.getElement()));
 
         return new Tuple3<>(window1hStream, window24hStream, window7dStream);
+    }
+
+    private static class StringLongKeyValueTopAggregateFunction extends KeyValueTopAggregateFunction.Merge<String, Long> {
+
+        public StringLongKeyValueTopAggregateFunction(int maxItems) {
+            super(maxItems);
+        }
     }
 }

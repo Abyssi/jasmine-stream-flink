@@ -6,9 +6,19 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Serializable, Cloneable {
+public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Serializable, Cloneable, Mergeable<BoundedPriorityQueue<E>> {
 
     private int maxItems;
+
+    public BoundedPriorityQueue() {
+        super();
+        this.maxItems = 10;
+    }
+
+    public BoundedPriorityQueue(int maxItems) {
+        super();
+        this.maxItems = maxItems;
+    }
 
     public BoundedPriorityQueue(int maxItems, Comparator<? super E> comparator) {
         super(comparator);
@@ -26,19 +36,15 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
         try {
             boolean success = this.offer(e);
             if (!success) return false;
-            else if (this.size() > maxItems) //this.poll();
+            else if (this.size() > maxItems) this.poll();
             return true;
         } catch (Exception error) {
-            System.out.println("abc: " +e);
-            System.out.println("abcdef: " +this);
-            System.out.println("Error: " + error);
+            error.printStackTrace();
         }
         return false;
     }
 
-    public void merge(BoundedPriorityQueue<E> other) {
-        this.addAll(other);
-    }
+
 
     @SuppressWarnings("unchecked")
     public E[] toSortedArray() {
@@ -49,17 +55,27 @@ public class BoundedPriorityQueue<E> extends PriorityQueue<E> implements Seriali
 
     @SuppressWarnings("unchecked")
     public E[] toSortedArray(Class<E> eClass) {
-        //System.out.println(this);
-        return (E[]) Array.newInstance(eClass, this.size());
-        /*
         E[] array = this.toArray((E[]) Array.newInstance(eClass, this.size()));
         Arrays.sort(array, this.comparator().reversed());
         return array;
-        */
     }
 
     @Override
     public BoundedPriorityQueue<E> clone() {
         return new BoundedPriorityQueue<>(this.maxItems, this);
+    }
+
+    public int getMaxItems() {
+        return maxItems;
+    }
+
+    public void setMaxItems(int maxItems) {
+        this.maxItems = maxItems;
+    }
+
+    @Override
+    public BoundedPriorityQueue<E> merge(BoundedPriorityQueue<E> other) {
+        this.addAll(other);
+        return this;
     }
 }
