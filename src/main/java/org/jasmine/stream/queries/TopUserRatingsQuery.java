@@ -61,7 +61,6 @@ public class TopUserRatingsQuery {
         inputStream.addSink(new RedisSink<>(conf, new RedisKeyValueMapper<>(item -> String.valueOf(item.getCommentID()), item -> String.valueOf(item.getUserID()))));
 
         DataStream<Tuple2<Long, Double>> likesCountWindow24hStream = inputStream
-                .filter(item -> item.getDepth() == 1)
                 .map(item -> new Tuple2<>(item.getUserID(), item.getRecommendations() * (item.isEditorsSelection() ? 1.1 : 1))).returns(Types.TUPLE(Types.LONG, Types.DOUBLE))
                 .keyBy(new KeyValueKeySelector<>())
                 .window(TumblingEventTimeWindows.of(window24h))

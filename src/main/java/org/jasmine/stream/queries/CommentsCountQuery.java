@@ -7,7 +7,9 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.jasmine.stream.models.CommentHourlyCount;
 import org.jasmine.stream.models.CommentInfo;
 import org.jasmine.stream.models.CommentType;
-import org.jasmine.stream.operators.*;
+import org.jasmine.stream.operators.CollectorAggregateFunction;
+import org.jasmine.stream.operators.CounterAggregateFunction;
+import org.jasmine.stream.operators.TimestampEnrichProcessAllWindowFunction;
 import org.jasmine.stream.utils.DateUtils;
 
 import java.util.Calendar;
