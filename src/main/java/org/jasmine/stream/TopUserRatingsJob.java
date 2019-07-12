@@ -33,6 +33,7 @@ import org.jasmine.stream.queries.TopUserRatingsQuery;
 import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
+import org.jasmine.stream.utils.LatencyTracker;
 
 import java.io.File;
 import java.util.Objects;
@@ -76,6 +77,13 @@ public class TopUserRatingsJob {
         DataStream<TopUserRatings> topUserRatings24h = topUserRatingsStreams.f0;
         DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
         DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;
+
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topUserRatings24h).getEndStream().print("topUserRatings24h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topUserRatings7d).getEndStream().print("topUserRatings7d");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topUserRatings1M).getEndStream().print("topUserRatings1M");
 
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
             topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));

@@ -72,10 +72,12 @@ public class TopArticlesJob {
         DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
         DataStream<Top3Article> topArticles7d = topArticlesStreams.f2;
 
-        LatencyTracker lt = new LatencyTracker();
-        lt.trackStart(inputStream);
-        lt.trackEnd(topArticles1h);
-        lt.getEndStream().print();
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topArticles1h).getEndStream().print("topArticles1h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topArticles24h).getEndStream().print("topArticles24h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topArticles7d).getEndStream().print("topArticles7d");
 
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
             topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));

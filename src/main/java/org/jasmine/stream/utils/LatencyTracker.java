@@ -11,6 +11,14 @@ public class LatencyTracker {
     private DataStream<Long> startStream;
     private DataStream<Long> endStream;
 
+    public LatencyTracker() {
+    }
+
+    public <T1, T2> LatencyTracker(DataStream<T1> startTrackStream, DataStream<T2> endTrackStream) {
+        this.trackStart(startTrackStream);
+        this.trackEnd(endTrackStream);
+    }
+
     public <T> DataStream<T> trackStart(DataStream<T> stream) {
         this.startStream = FlinkConfiguration.getParameters().getBoolean("latency-enabled") ? stream.flatMap(new LatencyStartFlatMapFunction<>()).setParallelism(1).name("LatencyTrackerStart") : stream.getExecutionEnvironment().fromElements(0L);
         return stream;

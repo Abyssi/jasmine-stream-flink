@@ -32,6 +32,7 @@ import org.jasmine.stream.queries.CommentsCountQuery;
 import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
+import org.jasmine.stream.utils.LatencyTracker;
 
 import java.io.File;
 import java.util.Objects;
@@ -70,6 +71,13 @@ public class CommentsCountJob {
         DataStream<CommentHourlyCount> commentsCount24h = commentsCountStreams.f0;
         DataStream<CommentHourlyCount> commentsCount7d = commentsCountStreams.f1;
         DataStream<CommentHourlyCount> commentsCount1M = commentsCountStreams.f2;
+
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, commentsCount24h).getEndStream().print("commentsCount24h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, commentsCount7d).getEndStream().print("commentsCount7d");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, commentsCount1M).getEndStream().print("commentsCount1M");
 
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
             commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));

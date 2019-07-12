@@ -37,6 +37,7 @@ import org.jasmine.stream.queries.TopUserRatingsQuery;
 import org.jasmine.stream.utils.JNStreamExecutionEnvironment;
 import org.jasmine.stream.utils.JSONClassDeserializationSchema;
 import org.jasmine.stream.utils.JSONClassSerializationSchema;
+import org.jasmine.stream.utils.LatencyTracker;
 
 import java.io.File;
 import java.util.Objects;
@@ -83,6 +84,13 @@ public class StreamingJob {
         DataStream<Top3Article> topArticles24h = topArticlesStreams.f1;
         DataStream<Top3Article> topArticles7d = topArticlesStreams.f2;
 
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topArticles1h).getEndStream().print("topArticles1h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topArticles24h).getEndStream().print("topArticles24h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topArticles7d).getEndStream().print("topArticles7d");
+
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
             topArticles1h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topArticles1h"), new JSONClassSerializationSchema<>(), properties));
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
@@ -111,6 +119,13 @@ public class StreamingJob {
         DataStream<CommentHourlyCount> commentsCount7d = commentsCountStreams.f1;
         DataStream<CommentHourlyCount> commentsCount1M = commentsCountStreams.f2;
 
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, commentsCount24h).getEndStream().print("commentsCount24h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, commentsCount7d).getEndStream().print("commentsCount7d");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, commentsCount1M).getEndStream().print("commentsCount1M");
+
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
             commentsCount24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "commentsCount24h"), new JSONClassSerializationSchema<>(), properties));
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
@@ -138,6 +153,13 @@ public class StreamingJob {
         DataStream<TopUserRatings> topUserRatings24h = topUserRatingsStreams.f0;
         DataStream<TopUserRatings> topUserRatings7d = topUserRatingsStreams.f1;
         DataStream<TopUserRatings> topUserRatings1M = topUserRatingsStreams.f2;
+
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topUserRatings24h).getEndStream().print("topUserRatings24h");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topUserRatings7d).getEndStream().print("topUserRatings7d");
+        if (FlinkConfiguration.getParameters().getBoolean("latency-enabled"))
+            new LatencyTracker(inputStream, topUserRatings1M).getEndStream().print("topUserRatings1M");
 
         if (FlinkConfiguration.getParameters().getBoolean("kafka-enabled"))
             topUserRatings24h.addSink(new FlinkKafkaProducer<>(String.format(FlinkConfiguration.getParameters().get("kafka-output-topic"), "topUserRatings24h"), new JSONClassSerializationSchema<>(), properties));
