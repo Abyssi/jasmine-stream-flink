@@ -21,12 +21,8 @@ public class CommentsCountQuery {
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window))
                 .aggregate(new CounterAggregateFunction<>())
-                .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new IdentifiedIdKeySelector<>())
-                .window(TumblingEventTimeWindows.of(window))
-                .aggregate(new CollectorAggregateFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window))
-                .reduce(new CollectorAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
     }
 
@@ -42,33 +38,18 @@ public class CommentsCountQuery {
                 .keyBy(s -> s)
                 .window(TumblingEventTimeWindows.of(window24h))
                 .aggregate(new CounterAggregateFunction<>())
-                .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new IdentifiedIdKeySelector<>())
-                .window(TumblingEventTimeWindows.of(window24h))
-                .aggregate(new CollectorAggregateFunction<>())
                 .windowAll(TumblingEventTimeWindows.of(window24h))
-                .reduce(new CollectorAggregateFunction.Merge<>(), new TimestampEnrichProcessAllWindowFunction<>())
+                .aggregate(new CollectorAggregateFunction<>(), new TimestampEnrichProcessAllWindowFunction<>())
                 .map(item -> new CommentHourlyCount(item.getTimestamp(), item.getElement()));
 
         DataStream<CommentHourlyCount> window7dStream = window24hStream
-                .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new IdentifiedIdKeySelector<>())
-                .window(TumblingEventTimeWindows.of(window7d))
-                .aggregate(new IdentifiedCommentHourlyCountAggregateFunction())
                 .windowAll(TumblingEventTimeWindows.of(window7d))
                 .reduce(CommentHourlyCount::merge);
 
         DataStream<CommentHourlyCount> window1MStream = window7dStream
-                .map(new TaskIdKeyValueMapFunction<>())
-                .keyBy(new IdentifiedIdKeySelector<>())
-                .window(TumblingEventTimeWindows.of(window1M))
-                .aggregate(new IdentifiedCommentHourlyCountAggregateFunction())
                 .windowAll(TumblingEventTimeWindows.of(window1M))
                 .reduce(CommentHourlyCount::merge);
 
         return new Tuple3<>(window24hStream, window7dStream, window1MStream);
-    }
-
-    private static class IdentifiedCommentHourlyCountAggregateFunction extends IdentifiedMergeableAggregateFunction<CommentHourlyCount> {
     }
 }
